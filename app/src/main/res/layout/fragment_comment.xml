@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:fresco="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_gravity="center"
+    >
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp">
+        <!--头像-->
+        <com.facebook.drawee.view.SimpleDraweeView
+            android:id="@+id/iam_sdv_img"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_marginTop="4dp"
+            android:background="#fff"
+            android:scaleType="fitXY"
+            android:src="@mipmap/ic_launcher"
+            fresco:actualImageScaleType="centerCrop"
+            fresco:fadeDuration="2000"
+            fresco:roundAsCircle="true"/>
+        <!--右侧-->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <!--昵称以及回复人昵称-->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="4dp"
+                android:layout_marginTop="4dp">
+                <!--昵称-->
+                <TextView
+                    android:id="@+id/iam_tv_reply"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="4dp"
+                    android:layout_marginTop="4dp"
+                    android:text="1314****0201"
+                    android:textColor="#000"
+                    android:textSize="12dp"/>
+            </LinearLayout>
+
+            <!--评论内容-->
+            <TextView
+                android:id="@+id/iam_tv_content"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="4dp"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="8dp"
+                android:maxLines="3"
+                android:minLines="1"
+                android:text="呀呀呀呀呀，真不错"
+                android:textColor="#000"
+                android:textSize="12dp"/>
+            <!--评论时间-->
+            <TextView
+                android:id="@+id/iam_tv_time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="4dp"
+                android:layout_marginTop="4dp"
+                android:text="2016-05-26 11:56:36"
+                android:textColor="@android:color/darker_gray"
+                android:textSize="8dp" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+</LinearLayout>
