@@ -88,7 +88,7 @@ public class  MainActivity extends AppCompatActivity implements BottomNavigation
                 break;
             case 1:
                 if (mShareFragment == null) {
-                    mShareFragment = mShareFragment.newInstance("分享");
+                    mShareFragment = mShareFragment.newInstance();
                 }else{
                     transaction.show(mShareFragment);
                 }
