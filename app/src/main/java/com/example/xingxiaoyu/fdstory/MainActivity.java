@@ -39,8 +39,8 @@ public class  MainActivity extends AppCompatActivity implements BottomNavigation
         bottomNavigationBar.setMode(BottomNavigationBar.MODE_FIXED);
         bottomNavigationBar
                 .addItem(new BottomNavigationItem(R.drawable.ic_home_white_24dp, "首页").setActiveColorResource(R.color.orange))
-                .addItem(new BottomNavigationItem(R.drawable.ic_book_white_24dp, "分享").setActiveColorResource(R.color.blue))
-                .addItem(new BottomNavigationItem(R.drawable.ic_aboutme_white_24dp, "我的").setActiveColorResource(R.color.teal))
+                .addItem(new BottomNavigationItem(R.drawable.ic_book_white_24dp, "分享").setActiveColorResource(R.color.orange))
+                .addItem(new BottomNavigationItem(R.drawable.ic_aboutme_white_24dp, "我的").setActiveColorResource(R.color.orange))
                 .setFirstSelectedPosition(lastSelectedPosition)
                 .initialise();
 

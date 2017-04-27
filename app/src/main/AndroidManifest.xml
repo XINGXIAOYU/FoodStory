@@ -42,16 +42,17 @@
             android:value="9IocfDhkOuk5b6laSCUTHaLqKEeT7nef" />
 
         <activity android:name=".MainActivity">
+        </activity>
+        <activity android:name=".ArticleActivity"></activity>
+        <activity android:name=".CommentActivity"></activity>
+        <activity android:name=".login.LoginActivity"></activity>
+        <activity android:name=".register.RegisterActivity"></activity>
+        <activity android:name=".WelcomeActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
-        <activity android:name=".ArticleActivity">
-
-        </activity>
-        <activity android:name=".CommentActivity">
         </activity>
 
         <service

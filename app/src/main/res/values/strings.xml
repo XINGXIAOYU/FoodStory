@@ -4,4 +4,23 @@
     <string name="text">Squid blog crucifix Marfa, consectetur vero placeat mixtape. Non seitan sriracha eu, do Banksy fashion axe cred qui vegan delectus consequat Helvetica mollit. XOXO gluten-free disrupt, gastropub officia cliche chillwave hella pop-up. Fixie swag raw denim, YOLO craft beer assumenda occupy veniam photo booth pug consectetur next level Portland tote bag +1. Mlkshk PBR aliquip placeat Wes Anderson.</string>
     <string name="title">My Description</string>
     <string name="context_menu">Context menu</string>
+    <!-- Strings related to login -->
+    <string name="prompt_name">输入昵称</string>
+    <string name="prompt_email">输入邮箱</string>
+    <string name="prompt_password">输入密码</string>
+    <string name="prompt_password_again">确认密码</string>
+    <string name="action_sign_in">登录</string>
+    <string name="action_register_in">注册</string>
+    <string name="action_forget_password">忘记密码？</string>
+    <string name="action_sign_in_short">登录</string>
+    <string name="action_register_in_short">注册</string>
+    <string name="error_invalid_email">邮件地址不合法</string>
+    <string name="error_invalid_password">密码长度需大于6位</string>
+    <string name="error_incorrect_password">密码不正确</string>
+    <string name="error_incorrect_password2">两次输入密码不同</string>
+    <string name="error_field_required">未填写</string>
+    <string name="permission_rationale">"Contacts permissions are needed for providing email
+        completions."
+    </string>
+    <string name="title_activity_main">MainActivity</string>
 </resources>
