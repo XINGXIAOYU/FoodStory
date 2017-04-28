@@ -36,9 +36,8 @@ public class ArticleActivity extends AppCompatActivity implements OnMenuItemClic
     private String TAG = ArticleActivity.class.getSimpleName();
     private ContextMenuDialogFragment mMenuDialogFragment;
     private ArticleFragment mArticleFragment;
-    private String articleID;
+    private String article_name;
     FragmentManager fm;
-//    private EventBus eventBus;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,8 +54,10 @@ public class ArticleActivity extends AppCompatActivity implements OnMenuItemClic
      */
     private void setDefaultFragment() {
         fm = getSupportFragmentManager();
-        articleID = getIntent().getStringExtra("article_id");
-        mArticleFragment = mArticleFragment.newInstance(articleID);
+        article_name = getIntent().getStringExtra("article_name");
+        //根据ID获得图片等信息
+        String pic = "http://farm8.staticflickr.com/7232/6913504132_a0fce67a0e_c.jpg";
+        mArticleFragment = mArticleFragment.newInstance(article_name,pic);
         addFragment(mArticleFragment, true, R.id.container);
     }
 

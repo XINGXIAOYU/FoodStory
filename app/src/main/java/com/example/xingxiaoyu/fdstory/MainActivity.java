@@ -12,13 +12,12 @@ import android.widget.TextView;
 import com.ashokvarma.bottomnavigation.BottomNavigationBar;
 import com.ashokvarma.bottomnavigation.BottomNavigationItem;
 import com.baidu.mapapi.SDKInitializer;
-import com.baidu.mapapi.map.MapView;
 
 /**
  * Created by xingxiaoyu on 17/4/26.
  */
 
-public class  MainActivity extends AppCompatActivity implements BottomNavigationBar.OnTabSelectedListener {
+public class MainActivity extends AppCompatActivity implements BottomNavigationBar.OnTabSelectedListener {
     Toolbar mToolbar;
     TextView mToolBarTextView;
     BottomNavigationBar bottomNavigationBar;
@@ -27,6 +26,7 @@ public class  MainActivity extends AppCompatActivity implements BottomNavigation
     private MyselfFragment mMySelfFragment;
     int lastSelectedPosition = 0;
     private String TAG = MainActivity.class.getSimpleName();
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,6 +55,8 @@ public class  MainActivity extends AppCompatActivity implements BottomNavigation
         FragmentManager fm = getFragmentManager();
         FragmentTransaction transaction = fm.beginTransaction();
         mMapFragment = MapFragment.newInstance();
+        mShareFragment = ShareFragment.newInstance();
+        mMySelfFragment = MyselfFragment.newInstance("我的");
         mToolBarTextView.setText("首页");
         transaction.replace(R.id.tb, mMapFragment);
         transaction.commit();
@@ -80,7 +82,7 @@ public class  MainActivity extends AppCompatActivity implements BottomNavigation
             case 0:
                 if (mMapFragment == null) {
                     mMapFragment = mMapFragment.newInstance();
-                }else{
+                } else {
                     transaction.show(mMapFragment);
                 }
                 mToolBarTextView.setText("首页");
@@ -89,7 +91,7 @@ public class  MainActivity extends AppCompatActivity implements BottomNavigation
             case 1:
                 if (mShareFragment == null) {
                     mShareFragment = mShareFragment.newInstance();
-                }else{
+                } else {
                     transaction.show(mShareFragment);
                 }
                 mToolBarTextView.setText("分享");
@@ -98,7 +100,7 @@ public class  MainActivity extends AppCompatActivity implements BottomNavigation
             case 2:
                 if (mMySelfFragment == null) {
                     mMySelfFragment = mMySelfFragment.newInstance("我的");
-                }else{
+                } else {
                     transaction.show(mMySelfFragment);
                 }
                 mToolBarTextView.setText("我的");

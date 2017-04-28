@@ -9,6 +9,7 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -35,6 +36,9 @@ import com.baidu.mapapi.map.MyLocationConfiguration;
 import com.baidu.mapapi.map.MyLocationData;
 import com.baidu.mapapi.model.LatLng;
 import com.example.xingxiaoyu.fdstory.view.RoundImageView;
+import com.example.xingxiaoyu.fdstory.view.ScaleImageView;
+import com.facebook.drawee.backends.pipeline.Fresco;
+import com.facebook.drawee.view.SimpleDraweeView;
 
 import java.util.ArrayList;
 
@@ -48,9 +52,15 @@ import static android.content.Context.SENSOR_SERVICE;
  */
 
 public class MapFragment extends Fragment implements SensorEventListener {
+
+    private String urls[] = {
+            "http://farm8.staticflickr.com/7232/6913504132_a0fce67a0e_c.jpg",
+    };
+
+
     @Bind(R.id.bmapView)
     MapView mMapView;
-    private View overlayview = null;//mark 视图
+    //    private View overlayview = null;//mark 视图
     private View popView = null;//弹出框视图
     private BaiduMap mBaiduMap;
     private LatLng[] latLngs;//坐标集合
@@ -72,6 +82,7 @@ public class MapFragment extends Fragment implements SensorEventListener {
     Button requestLocButton;
     boolean isFirstLoc = true; // 是否首次定位
     private MyLocationData locData;
+
     public static MapFragment newInstance() {
         MapFragment fragment = new MapFragment();
         return fragment;
@@ -84,7 +95,7 @@ public class MapFragment extends Fragment implements SensorEventListener {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
+        Fresco.initialize(this.getActivity());
     }
 
     @Override
@@ -94,21 +105,18 @@ public class MapFragment extends Fragment implements SensorEventListener {
         ButterKnife.bind(this, view);
         mSensorManager = (SensorManager) this.getActivity().getSystemService(SENSOR_SERVICE);//获取传感器管理服务
         mCurrentMode = MyLocationConfiguration.LocationMode.NORMAL;
-        overlayview = LayoutInflater.from(this.getActivity()).inflate(R.layout.myoverlay, null);
         popView = LayoutInflater.from(this.getActivity()).inflate(R.layout.infopopup, null);
         mMapView.getChildAt(2).setPadding(0, 0, 0, 200);//这是控制缩放控件的位置
         mBaiduMap = mMapView.getMap();
         mBaiduMap.setMapType(BaiduMap.MAP_TYPE_NORMAL);
         mBaiduMap.setMyLocationEnabled(true);
-        LatLng cenpt = new LatLng(31.2455045690,121.5064839346);//默认中心点 东方明珠
+        LatLng cenpt = new LatLng(31.2455045690, 121.5064839346);//默认中心点 东方明珠
         //定义地图状态
         MapStatus mMapStatus = new MapStatus.Builder()
                 .target(cenpt)
                 .zoom(18)
                 .build();
         //定义MapStatusUpdate对象，以便描述地图状态将要发生的变化
-
-
         MapStatusUpdate mMapStatusUpdate = MapStatusUpdateFactory.newMapStatus(mMapStatus);
         //改变地图状态
         mBaiduMap.setMapStatus(mMapStatusUpdate);
@@ -122,7 +130,7 @@ public class MapFragment extends Fragment implements SensorEventListener {
         return view;
     }
 
-    private void startLocation(){
+    private void startLocation() {
         mLocClient = new LocationClient(this.getActivity());
         mBaiduMap.setMyLocationEnabled(true);
         mLocClient.registerLocationListener(myListener);
@@ -177,52 +185,30 @@ public class MapFragment extends Fragment implements SensorEventListener {
         locations[0][1] = 121.5064839346;
         latLngs = new LatLng[num];
         Markers = new Marker[num];
-        ArrayList<BitmapDescriptor> giflist = new ArrayList<BitmapDescriptor>();
         for (int i = 0; i < num; i++) {
             double v1 = locations[i][0];
             double v2 = locations[i][1];
             latLngs[i] = new LatLng(v1, v2);//设置位置
-            RoundImageView roundImageView = (RoundImageView) overlayview.findViewById(R.id.roundImageView);
-            roundImageView.setImageBitmap(getRes("head1"));
-            Bitmap bitmap = getViewBitmap(overlayview);
-            bd = BitmapDescriptorFactory.fromBitmap(bitmap);//设置图片
-            MarkerOptions ooA = new MarkerOptions().position(latLngs[i]).icon(bd)
-                    .zIndex(9).draggable(false);
-            Markers[i] = (Marker) (mBaiduMap.addOverlay(ooA));
             ImageView popImageView = (ImageView) popView.findViewById(R.id.pop_imageView);
-            popImageView.setImageBitmap(getRes("head1"));
+            popImageView.setImageURI(Uri.parse(urls[i]));
             TextView title = (TextView) popView.findViewById(R.id.article_title);
             TextView simple_content = (TextView) popView.findViewById(R.id.simple_content);
             title.setText("小小蛋糕");
             simple_content.setText("2016/05/10");
-            giflist.add(bd);
+            mInfoWindow = new InfoWindow(popView, latLngs[i], -47);
+            mBaiduMap.showInfoWindow(mInfoWindow);
         }
         Button more = (Button) popView.findViewById(R.id.button_more);
-        View hide = (View) popView.findViewById(R.id.info);
         more.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent i = new Intent(getActivity(),ArticleActivity.class);
-                i.putExtra("article_id","这篇文章的ID");
+                Intent i = new Intent(getActivity(), ArticleActivity.class);
+                i.putExtra("article_name", "这篇文章的ID");
                 startActivity(i);
             }
         });
-        hide.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mBaiduMap.hideInfoWindow();
-            }
-        });
-        mBaiduMap.setOnMarkerClickListener(new BaiduMap.OnMarkerClickListener() {
-            public boolean onMarkerClick(final Marker marker) {
-                LatLng ll = marker.getPosition();
-                mInfoWindow = new InfoWindow(popView, ll, -47);
-                mBaiduMap.showInfoWindow(mInfoWindow);
-                return true;
-            }
-        });
-
     }
+
 
     public Bitmap getRes(String name) {
         ApplicationInfo appInfo = this.getActivity().getApplicationInfo();

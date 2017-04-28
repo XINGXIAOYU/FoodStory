@@ -3,6 +3,7 @@ package com.example.xingxiaoyu.fdstory;
 import android.content.pm.ApplicationInfo;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
@@ -43,10 +44,11 @@ public class ArticleFragment extends Fragment {
     int likeNum = 9;
     int commentNum = 9;
 
-    public static ArticleFragment newInstance(String param1) {
+    public static ArticleFragment newInstance(String name,String pic) {
         ArticleFragment fragment = new ArticleFragment();
         Bundle args = new Bundle();
-        args.putString("agrs1", param1);
+        args.putString("name", name);
+        args.putString("pic",pic);
         fragment.setArguments(args);
         return fragment;
     }
@@ -66,8 +68,8 @@ public class ArticleFragment extends Fragment {
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_article, container, false);
         ButterKnife.bind(this, view);
-        articleImage.setImageBitmap(getRes("test1"));
-        articleTitle.setText(getArguments().getString("agrs1"));
+        articleImage.setImageURI(Uri.parse(getArguments().getString("pic")));;
+        articleTitle.setText(getArguments().getString("name"));
         author.setText("Saoirse");
         date.setText("2016/10/05");
         articleContent.setText("刘天霖大笨蛋 邢晓渝小机智");

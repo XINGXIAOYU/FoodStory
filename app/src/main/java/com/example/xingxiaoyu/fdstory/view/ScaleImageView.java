@@ -7,6 +7,8 @@ import android.support.v7.widget.AppCompatImageView;
 import android.util.AttributeSet;
 import android.widget.RelativeLayout;
 
+import com.facebook.drawee.view.SimpleDraweeView;
+
 /**
  * 
  * This view will auto determine the width or height by determining if the 
@@ -17,7 +19,7 @@ import android.widget.RelativeLayout;
  *
  *
  */
-public class ScaleImageView extends AppCompatImageView {
+public class ScaleImageView extends SimpleDraweeView {
 	private ImageChangeListener imageChangeListener;
 	private boolean scaleToWidth = false; // this flag determines if should measure height manually dependent of width
 
