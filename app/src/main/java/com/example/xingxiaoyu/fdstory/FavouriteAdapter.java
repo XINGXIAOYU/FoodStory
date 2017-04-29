@@ -8,7 +8,6 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.TextView;
 
-import com.example.xingxiaoyu.fdstory.entity.Comment;
 import com.example.xingxiaoyu.fdstory.entity.Favourite;
 import com.facebook.drawee.view.SimpleDraweeView;
 

@@ -17,7 +17,6 @@ import com.baoyz.swipemenulistview.SwipeMenu;
 import com.baoyz.swipemenulistview.SwipeMenuCreator;
 import com.baoyz.swipemenulistview.SwipeMenuItem;
 import com.baoyz.swipemenulistview.SwipeMenuListView;
-import com.example.xingxiaoyu.fdstory.entity.Comment;
 import com.example.xingxiaoyu.fdstory.entity.Favourite;
 
 import java.util.ArrayList;

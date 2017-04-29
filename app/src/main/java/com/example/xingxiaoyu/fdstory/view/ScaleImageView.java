@@ -3,7 +3,6 @@ package com.example.xingxiaoyu.fdstory.view;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
-import android.support.v7.widget.AppCompatImageView;
 import android.util.AttributeSet;
 import android.widget.RelativeLayout;
 

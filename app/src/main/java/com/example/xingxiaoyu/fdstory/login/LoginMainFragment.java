@@ -7,36 +7,26 @@ import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.v4.app.Fragment;
 import android.text.TextUtils;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.support.v4.app.Fragment;
 import android.view.inputmethod.EditorInfo;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
-
 import com.example.xingxiaoyu.fdstory.MainActivity;
 import com.example.xingxiaoyu.fdstory.R;
-import com.example.xingxiaoyu.fdstory.WelcomeActivity;
-
-import org.ksoap2.SoapEnvelope;
-import org.ksoap2.serialization.SoapObject;
-import org.ksoap2.serialization.SoapSerializationEnvelope;
-import org.ksoap2.transport.HttpTransportSE;
-import org.xmlpull.v1.XmlPullParserException;
-
-import java.io.IOException;
 
 /**
  * Created by xingxiaoyu on 17/4/17.
  */
 
-public class LoginMainFragment extends Fragment{
+public class LoginMainFragment extends Fragment {
     /**
      * Id to identity READ_CONTACTS permission request.
      */
@@ -46,6 +36,8 @@ public class LoginMainFragment extends Fragment{
     private Button mEmailSignInButton;
     private LoginActivity loginActivity;
     private View mProgressView;
+    String email;
+    String password;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -58,7 +50,7 @@ public class LoginMainFragment extends Fragment{
         super.onActivityCreated(savedInstanceState);
         loginActivity = (LoginActivity) this.getActivity();
         mEmailView = (AutoCompleteTextView) getView().findViewById(R.id.email);
-        mPasswordView = (EditText)getView().findViewById(R.id.password);
+        mPasswordView = (EditText) getView().findViewById(R.id.password);
         mPasswordView.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView textView, int id, KeyEvent keyEvent) {
@@ -69,7 +61,7 @@ public class LoginMainFragment extends Fragment{
                 return false;
             }
         });
-        mEmailSignInButton = (Button)getView().findViewById(R.id.email_sign_in_button);
+        mEmailSignInButton = (Button) getView().findViewById(R.id.email_sign_in_button);
         mEmailSignInButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -88,8 +80,8 @@ public class LoginMainFragment extends Fragment{
         mPasswordView.setError(null);
 
         // Store values at the time of the login attempt.
-        String email = mEmailView.getText().toString();
-        String password = mPasswordView.getText().toString();
+        email = mEmailView.getText().toString();
+        password = mPasswordView.getText().toString();
 
         boolean cancel = false;
         View focusView = null;
@@ -126,6 +118,7 @@ public class LoginMainFragment extends Fragment{
             mAuthTask.execute((Void) null);
         }
     }
+
     private boolean isEmailValid(String email) {
         //TODO: Replace this with your own logic
         return email.contains("@");
@@ -216,6 +209,7 @@ public class LoginMainFragment extends Fragment{
             showProgress(false);
             if (success) {
                 Intent intent = new Intent(loginActivity, MainActivity.class);
+                intent.putExtra("email", email);
                 loginActivity.startActivity(intent);
                 loginActivity.finish();
             } else {

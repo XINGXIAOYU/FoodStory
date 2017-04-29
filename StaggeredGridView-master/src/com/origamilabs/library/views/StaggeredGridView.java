@@ -19,10 +19,6 @@ package com.origamilabs.library.views;
  *
  */
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.res.TypedArray;
@@ -56,6 +52,10 @@ import android.view.accessibility.AccessibilityEvent;
 import android.widget.ListAdapter;
 
 import com.origamilabs.library.R;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 
 /**
  * ListView and GridView just not complex enough? Try StaggeredGridView!

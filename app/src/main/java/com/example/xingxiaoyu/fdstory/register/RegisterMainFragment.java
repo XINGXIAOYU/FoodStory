@@ -3,7 +3,6 @@ package com.example.xingxiaoyu.fdstory.register;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
-
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -21,8 +20,8 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.xingxiaoyu.fdstory.MainActivity;
 import com.example.xingxiaoyu.fdstory.R;
-import com.example.xingxiaoyu.fdstory.WelcomeActivity;
 
 
 /**
@@ -38,6 +37,10 @@ public class RegisterMainFragment extends Fragment {
     private Button mEmailRegisterInButton;
     private RegisterActivity registerActivity;
     private View mProgressView;
+    String name;
+    String email;
+    String password;
+    String confirmPassword;
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.activity_register_fragment, container, false);
@@ -82,10 +85,10 @@ public class RegisterMainFragment extends Fragment {
         mConfirmPasswordView.setError(null);
 
         // Store values at the time of the login attempt.
-        String name = mNameView.getText().toString();
-        String email = mEmailView.getText().toString();
-        String password = mPasswordView.getText().toString();
-        String confirmPassword = mConfirmPasswordView.getText().toString();
+        name = mNameView.getText().toString();
+        email = mEmailView.getText().toString();
+        password = mPasswordView.getText().toString();
+        confirmPassword = mConfirmPasswordView.getText().toString();
 
         boolean cancel = false;
         View focusView = null;
@@ -240,7 +243,9 @@ public class RegisterMainFragment extends Fragment {
             showProgress(false);
 
             if (success) {
-                Intent intent = new Intent(registerActivity, WelcomeActivity.class);
+                Intent intent = new Intent(registerActivity, MainActivity.class);
+                intent.putExtra("user_name", name);
+                intent.putExtra("email",email);
                 registerActivity.startActivity(intent);
                 registerActivity.finish();
             } else {

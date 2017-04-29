@@ -19,8 +19,6 @@ import android.widget.Toast;
 import com.example.xingxiaoyu.fdstory.entity.Comment;
 import com.facebook.drawee.backends.pipeline.Fresco;
 
-import org.greenrobot.eventbus.EventBus;
-
 import java.util.ArrayList;
 import java.util.List;
 
