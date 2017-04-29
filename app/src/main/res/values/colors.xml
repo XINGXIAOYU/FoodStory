@@ -9,4 +9,6 @@
     <color name="blue">#2196F3</color>
     <color name="grey">#607D8B</color>
     <color name="orange">#f57c00</color>
+    <color name="grey_white">#E5E2E2</color>
+    <color name="white_add">#F5F5F5</color>
 </resources>

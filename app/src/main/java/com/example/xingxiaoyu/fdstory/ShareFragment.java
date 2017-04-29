@@ -1,7 +1,10 @@
 package com.example.xingxiaoyu.fdstory;
 
 import android.app.Fragment;
+import android.content.Intent;
 import android.os.Bundle;
+import android.support.design.widget.FloatingActionButton;
+import android.support.design.widget.Snackbar;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,6 +13,7 @@ import android.widget.Toast;
 import com.facebook.drawee.backends.pipeline.Fresco;
 import com.origamilabs.library.views.StaggeredGridView;
 
+import butterknife.Bind;
 import butterknife.ButterKnife;
 
 
@@ -19,6 +23,9 @@ import butterknife.ButterKnife;
 
 public class ShareFragment extends Fragment {
     StaggeredGridView gridView;
+    @Bind(R.id.write)
+    FloatingActionButton write;
+
     private String urls[] = {
             "http://farm8.staticflickr.com/7232/6913504132_a0fce67a0e_c.jpg",
             "http://farm5.staticflickr.com/4133/5096108108_df62764fcc_b.jpg",
@@ -66,6 +73,7 @@ public class ShareFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_share, container, false);
+        ButterKnife.bind(this, view);
         gridView = (StaggeredGridView) view.findViewById(R.id.staggeredGridView_sharelist);
         int margin = getResources().getDimensionPixelSize(R.dimen.margin);
         gridView.setItemMargin(margin); // set the GridView margin
@@ -79,11 +87,19 @@ public class ShareFragment extends Fragment {
                 int post=position;//位置
                 Toast.makeText(getActivity(), "点击了第"+post+"个", Toast.LENGTH_SHORT).show();
                 //显示这片文章的详细内容
+                Intent i = new Intent(getActivity(), ArticleActivity.class);
+                i.putExtra("article_name", "这篇文章的ID"+post);
+                startActivity(i);
             }
         });
         adapter.notifyDataSetChanged();//update
-        ButterKnife.bind(this, view);
-
+        write.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent i = new Intent(getActivity(), WriteArticleActivity.class);
+                startActivity(i);
+            }
+        });
         return view;
     }
 

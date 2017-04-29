@@ -32,7 +32,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- SD卡读取权限，用户写入离线定位数据-->
     <uses-permission android:name="android.permission.MOUNT_UNMOUNT_FILESYSTEMS"></uses-permission>
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
 
     <application
         android:allowBackup="true"
@@ -56,9 +56,8 @@
         <activity android:name=".CommentActivity"></activity>
         <activity android:name=".login.LoginActivity"></activity>
         <activity android:name=".register.RegisterActivity"></activity>
-        <activity android:name=".WelcomeActivity">
-
-        </activity>
+        <activity android:name=".WelcomeActivity"></activity>
+        <activity android:name=".WriteArticleActivity"></activity>
 
         <service
             android:name="com.baidu.location.f"

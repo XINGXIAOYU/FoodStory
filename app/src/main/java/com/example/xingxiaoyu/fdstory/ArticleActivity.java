@@ -100,7 +100,7 @@ public class ArticleActivity extends AppCompatActivity implements OnMenuItemClic
             getSupportActionBar().setDisplayShowTitleEnabled(false);
         }
         mToolbar.setBackgroundColor(Color.WHITE);
-        mToolbar.getBackground().setAlpha(150);
+        mToolbar.getBackground().setAlpha(180);
         mToolbar.setNavigationIcon(R.drawable.btn_back);
         mToolbar.setNavigationOnClickListener(new View.OnClickListener() {
             @Override

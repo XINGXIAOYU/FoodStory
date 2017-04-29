@@ -89,12 +89,6 @@ public class ArticleFragment extends Fragment {
         EventBus.getDefault().unregister(this);
     }
 
-    public Bitmap getRes(String name) {
-        ApplicationInfo appInfo = this.getActivity().getApplicationInfo();
-        int resID = getResources().getIdentifier(name, "drawable", appInfo.packageName);
-        return BitmapFactory.decodeResource(getResources(), resID);
-    }
-
 
     public void setText(String message) {
         likeNumView.setText(message);
