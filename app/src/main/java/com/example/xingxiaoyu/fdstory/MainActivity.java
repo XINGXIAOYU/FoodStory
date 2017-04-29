@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
 import android.os.Bundle;
+import android.support.v4.app.Fragment;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -12,6 +13,7 @@ import android.widget.TextView;
 import com.ashokvarma.bottomnavigation.BottomNavigationBar;
 import com.ashokvarma.bottomnavigation.BottomNavigationItem;
 import com.baidu.mapapi.SDKInitializer;
+import com.facebook.drawee.backends.pipeline.Fresco;
 
 /**
  * Created by xingxiaoyu on 17/4/26.
@@ -24,13 +26,15 @@ public class MainActivity extends AppCompatActivity implements BottomNavigationB
     private MapFragment mMapFragment;
     private ShareFragment mShareFragment;
     private MyselfFragment mMySelfFragment;
+    private ArticleFragment nightPageFragment;
     int lastSelectedPosition = 0;
     private String TAG = MainActivity.class.getSimpleName();
-
+    android.support.v4.app.FragmentManager fm;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Fresco.initialize(this);
         SDKInitializer.initialize(getApplicationContext());
         setContentView(R.layout.activity_main);
         mToolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -52,14 +56,39 @@ public class MainActivity extends AppCompatActivity implements BottomNavigationB
      * 设置默认的
      */
     private void setDefaultFragment() {
-        FragmentManager fm = getFragmentManager();
-        FragmentTransaction transaction = fm.beginTransaction();
-        mMapFragment = MapFragment.newInstance();
+        fm = getSupportFragmentManager();
+        if (isDay()) {
+            mMapFragment = MapFragment.newInstance();
+            addFragment(mMapFragment,true,R.id.tb);
+        } else {
+            nightPageFragment = ArticleFragment.newInstance("文章名字", "http://farm8.staticflickr.com/7232/6913504132_a0fce67a0e_c.jpg");
+            addFragment(nightPageFragment,true,R.id.tb);
+        }
         mShareFragment = ShareFragment.newInstance();
         mMySelfFragment = MyselfFragment.newInstance();
         mToolBarTextView.setText("首页");
-        transaction.replace(R.id.tb, mMapFragment);
-        transaction.commit();
+
+//        transaction.commit();
+    }
+
+    protected void addFragment(Fragment fragment, boolean addToBackStack, int containerId) {
+        invalidateOptionsMenu();
+        String backStackName = fragment.getClass().getName();
+        boolean fragmentPopped = fm.popBackStackImmediate(backStackName, 0);
+        if (!fragmentPopped) {
+            android.support.v4.app.FragmentTransaction transaction = fm.beginTransaction();
+            transaction.add(containerId, fragment, backStackName)
+                    .setTransition(android.support.v4.app.FragmentTransaction.TRANSIT_FRAGMENT_FADE);
+            if (addToBackStack)
+                transaction.addToBackStack(backStackName);
+            transaction.commit();
+        }
+    }
+
+    //当前时间是否比设定时间小
+    private boolean isDay() {
+        //TODO
+        return false;
     }
 
     private void initToolbar() {
@@ -75,18 +104,24 @@ public class MainActivity extends AppCompatActivity implements BottomNavigationB
     @Override
     public void onTabSelected(int position) {
         Log.d(TAG, "onTabSelected() called with: " + "position = [" + position + "]");
-        FragmentManager fm = this.getFragmentManager();
         //开启事务
-        FragmentTransaction transaction = fm.beginTransaction();
+        android.support.v4.app.FragmentTransaction transaction = fm.beginTransaction();
         switch (position) {
             case 0:
-                if (mMapFragment == null) {
+                if (isDay()&&mMapFragment == null) {
                     mMapFragment = mMapFragment.newInstance();
-                } else {
+                    transaction.replace(R.id.tb, mMapFragment);
+                } else if(isDay()){
                     transaction.show(mMapFragment);
+                    transaction.replace(R.id.tb, mMapFragment);
+                }else if(!isDay()&&nightPageFragment == null){
+                    nightPageFragment = ArticleFragment.newInstance("文章名字", "http://farm8.staticflickr.com/7232/6913504132_a0fce67a0e_c.jpg");
+                    transaction.replace(R.id.tb, nightPageFragment);
+                }else if(!isDay()){
+                    transaction.show(nightPageFragment);
+                    transaction.replace(R.id.tb, nightPageFragment);
                 }
                 mToolBarTextView.setText("首页");
-                transaction.replace(R.id.tb, mMapFragment);
                 break;
             case 1:
                 if (mShareFragment == null) {

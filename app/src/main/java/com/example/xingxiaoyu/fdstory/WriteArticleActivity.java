@@ -51,6 +51,9 @@ public class WriteArticleActivity extends AppCompatActivity implements OnMenuIte
     TextView articleContent;
     @Bind(R.id.photo)
     ImageView articleImage;
+    @Bind(R.id.insert_location)
+    ImageView insertLocation;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,6 +67,12 @@ public class WriteArticleActivity extends AppCompatActivity implements OnMenuIte
             @Override
             public void onClick(View v) {
                 new PopupWindows(WriteArticleActivity.this, articleImage);
+            }
+        });
+        insertLocation.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //插入定位
             }
         });
     }

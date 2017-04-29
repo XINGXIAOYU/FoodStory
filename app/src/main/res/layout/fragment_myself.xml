@@ -3,14 +3,14 @@
     xmlns:fresco="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="#fff">
+    android:background="#fff"
+    android:orientation="vertical">
     <!--头像-->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center"  >
+        android:gravity="center"
+        android:orientation="horizontal">
 
         <com.facebook.drawee.view.SimpleDraweeView
             android:id="@+id/my_image"
@@ -132,14 +132,30 @@
             android:layout_height="32dp"
             android:src="@drawable/icn_systemedit" />
 
-        <TextView
-
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_marginLeft="30dp"
-            android:gravity="fill_vertical"
-            android:text="设置"
-            android:textColor="@color/text_color"
-            android:textSize="20sp" />
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginLeft="30dp"
+                android:gravity="fill_vertical"
+                android:text="设置切换时间"
+                android:textColor="@color/text_color"
+                android:textSize="20sp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="30dp"
+                android:layout_marginTop="10dp"
+                android:gravity="fill_vertical"
+                android:text="20:00"
+                android:id="@+id/settime"
+                android:textColor="@color/pickerview_wheelview_textcolor_divider"
+                android:textSize="20sp" />
+        </LinearLayout>
     </LinearLayout>
 </LinearLayout>
