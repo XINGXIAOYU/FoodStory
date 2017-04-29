@@ -51,7 +51,7 @@ public class CommentAdapter extends BaseAdapter {
     @Override
     public View getView(final int position, View convertView, ViewGroup parent) {
         if (convertView == null) {
-            convertView = mLayoutInflater.inflate(R.layout.fragment_comment, null);
+            convertView = mLayoutInflater.inflate(R.layout.item_fragment_comment, null);
             viewHolder = new ViewHolder(convertView);
             convertView.setTag(viewHolder);
         } else {

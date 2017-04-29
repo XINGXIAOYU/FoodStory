@@ -56,7 +56,7 @@ public class MainActivity extends AppCompatActivity implements BottomNavigationB
         FragmentTransaction transaction = fm.beginTransaction();
         mMapFragment = MapFragment.newInstance();
         mShareFragment = ShareFragment.newInstance();
-        mMySelfFragment = MyselfFragment.newInstance("我的");
+        mMySelfFragment = MyselfFragment.newInstance();
         mToolBarTextView.setText("首页");
         transaction.replace(R.id.tb, mMapFragment);
         transaction.commit();
@@ -99,7 +99,7 @@ public class MainActivity extends AppCompatActivity implements BottomNavigationB
                 break;
             case 2:
                 if (mMySelfFragment == null) {
-                    mMySelfFragment = mMySelfFragment.newInstance("我的");
+                    mMySelfFragment = mMySelfFragment.newInstance();
                 } else {
                     transaction.show(mMySelfFragment);
                 }
