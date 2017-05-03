@@ -1,14 +1,21 @@
 package com.example.xingxiaoyu.fdstory;
 
 
+import android.content.Context;
 import android.content.Intent;
+import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.AnimationUtils;
+import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.PopupWindow;
 import android.widget.TextView;
 
 import com.bigkoo.pickerview.OptionsPickerView;
@@ -62,6 +69,12 @@ public class MyselfFragment extends Fragment {
         initTime();
         initCustomOptionPicker();
         myImage.setImageURI(Uri.parse("http://d.hiphotos.baidu.com/image/h%3D360/sign=856d60650933874483c5297a610fd937/55e736d12f2eb938e81944c7d0628535e5dd6f8a.jpg"));
+        myImage.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                new PopupWindows(getActivity(), myImage);
+            };
+        });
         myFootMap.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -155,5 +168,68 @@ public class MyselfFragment extends Fragment {
         super.onDestroyView();
         ButterKnife.unbind(this);
     }
+
+    public class PopupWindows extends PopupWindow {
+
+        public PopupWindows(Context mContext, View parent) {
+
+            super(mContext);
+
+            View view = View
+                    .inflate(mContext, R.layout.item_write_article_popwindow, null);
+            view.startAnimation(AnimationUtils.loadAnimation(mContext,
+                    R.anim.fade_ins));
+            LinearLayout ll_popup = (LinearLayout) view
+                    .findViewById(R.id.ll_popup);
+            ll_popup.startAnimation(AnimationUtils.loadAnimation(mContext,
+                    R.anim.push_bottom_in_2));
+
+            setWidth(ViewGroup.LayoutParams.FILL_PARENT);
+            setHeight(ViewGroup.LayoutParams.FILL_PARENT);
+            setBackgroundDrawable(new BitmapDrawable());
+            setFocusable(true);
+            setOutsideTouchable(true);
+            setContentView(view);
+            showAtLocation(parent, Gravity.BOTTOM, 0, 0);
+            update();
+
+            Button bt1 = (Button) view
+                    .findViewById(R.id.item_popupwindows_camera);
+            Button bt2 = (Button) view
+                    .findViewById(R.id.item_popupwindows_Photo);
+            Button bt3 = (Button) view
+                    .findViewById(R.id.item_popupwindows_cancel);
+            bt1.setOnClickListener(new View.OnClickListener() {
+                public void onClick(View v) {
+                    photo();
+                    dismiss();
+                }
+            });
+            bt2.setOnClickListener(new View.OnClickListener() {
+                public void onClick(View v) {
+                    album();
+                    dismiss();
+                }
+            });
+            bt3.setOnClickListener(new View.OnClickListener() {
+                public void onClick(View v) {
+                    dismiss();
+                }
+            });
+
+        }
+
+
+        public void photo() {
+            //拍照功能
+        }
+
+        public void album(){
+            //相册功能
+//            String url = "/Users/xingxiaoyu/Documents/FDStory/app/src/main/res/drawable/wel_pic.png";
+//            EventBus.getDefault().post(new PhotoEvent(url));
+        }
+    }
+
 
 }
