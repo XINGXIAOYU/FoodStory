@@ -155,6 +155,7 @@ public class WriteArticleActivity extends AppCompatActivity implements OnMenuIte
                 saveArticle()
                  */
                 Toast.makeText(this, "成功发表，进入审核", Toast.LENGTH_SHORT).show();
+                finish();
                 break;
             case 2:
                 //保存草稿
@@ -162,6 +163,7 @@ public class WriteArticleActivity extends AppCompatActivity implements OnMenuIte
                 saveArticle()
                  */
                 Toast.makeText(this, "存入草稿箱", Toast.LENGTH_SHORT).show();
+                finish();
                 break;
         }
 

@@ -86,7 +86,7 @@ public class MainActivity extends AppCompatActivity implements BottomNavigationB
     //当前时间是否比设定时间小
     private boolean isDay() {
         //TODO
-        return false;
+        return true;
     }
 
     private void initToolbar() {
