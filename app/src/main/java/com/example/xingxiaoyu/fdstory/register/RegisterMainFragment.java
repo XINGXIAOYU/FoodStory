@@ -210,17 +210,19 @@ public class RegisterMainFragment extends Fragment {
 
         @Override
         protected Boolean doInBackground(Void... params) {
+            Log.i("Register","time out");
             HttpURLConnection conn = null;
             InputStream is = null;
             try {
-                String path = "http://" + WebIP.IP + "/FDStoryServer/userRegister";
+                String path = "http://10.0.2.2:8080/FDStoryServer/register";
                 path = path + "?userEmail=" + mEmail + "&userPassword=" + mPassword + "&userName=" + mName;
                 conn = (HttpURLConnection) new URL(path).openConnection();
-                conn.setConnectTimeout(3000); // 设置超时时间
-                conn.setReadTimeout(3000);
+                conn.setConnectTimeout(5000); // 设置超时时间
+                conn.setReadTimeout(5000);
                 conn.setDoInput(true);
                 conn.setRequestMethod("GET"); // 设置获取信息方式
                 conn.setRequestProperty("Charset", "UTF-8"); // 设置接收数据编码格式
+                conn.connect();
                 if (conn.getResponseCode() == 200) {
                     Log.i("LoginWeb", "NO2. " + mEmail + " " + mPassword);
                     is = conn.getInputStream();
