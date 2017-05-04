@@ -1,7 +1,7 @@
 package com.example.xingxiaoyu.fdstory.entity;
 
 public class Comment {
-    private String id;
+    private int id;
     private String nickName;
     private String imgUrl;
     private String content;
@@ -11,7 +11,7 @@ public class Comment {
     public Comment() {
     }
 
-    public Comment(String id, String nickName, String imgUrl, String content, String time) {
+    public Comment(int id, String nickName, String imgUrl, String content, String time) {
         this.id = id;
         this.nickName = nickName;
         this.imgUrl = imgUrl;
@@ -20,11 +20,11 @@ public class Comment {
     }
 
 
-    public String getId() {
+    public int getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(int id) {
         this.id = id;
     }
 

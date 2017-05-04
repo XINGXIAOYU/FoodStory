@@ -36,15 +36,20 @@ public class ArticleFragment extends Fragment {
     TextView likeNumView;
     @Bind(R.id.comment_num)
     TextView commentNumView;
-    //    private EventBus eventBus;
     int likeNum = 9;
     int commentNum = 9;
 
-    public static ArticleFragment newInstance(String name,String pic) {
+    public static ArticleFragment newInstance(int id, String image, String title, String author, String date, String content, int like, int save) {
         ArticleFragment fragment = new ArticleFragment();
         Bundle args = new Bundle();
-        args.putString("name", name);
-        args.putString("pic",pic);
+        args.putInt("article_id", id);
+        args.putString("article_image", image);
+        args.putString("article_title", title);
+        args.putString("article_author", author);
+        args.putString("article_date", date);
+        args.putString("article_content", content);
+        args.putInt("article_like", like);
+        args.putInt("article_save", save);
         fragment.setArguments(args);
         return fragment;
     }
@@ -65,15 +70,15 @@ public class ArticleFragment extends Fragment {
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_article, container, false);
         ButterKnife.bind(this, view);
-        articleImage.setImageURI(Uri.parse(getArguments().getString("pic")));;
-        articleTitle.setText(getArguments().getString("name"));
-        author.setText("Saoirse");
-        date.setText("2016/10/05");
-        articleContent.setText("刘天霖大笨蛋 邢晓渝小机智");
+        articleImage.setImageURI(Uri.parse(getArguments().getString("article_image")));
+        articleTitle.setText(getArguments().getString("article_title"));
+        author.setText(getArguments().getString("article_author"));
+        date.setText(getArguments().getString("article_date"));
+        articleContent.setText(getArguments().getString("article_content"));
+        likeNum = getArguments().getInt("article_like");
         likeNumView.setText(likeNum + "");
+        commentNum = getArguments().getInt("article_save");
         commentNumView.setText(commentNum + "");
-//        eventBus = new EventBus();
-//        //注册事件
         EventBus.getDefault().register(this);
         return view;
     }

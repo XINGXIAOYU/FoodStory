@@ -20,8 +20,13 @@ import android.widget.TextView;
 
 import com.bigkoo.pickerview.OptionsPickerView;
 import com.bigkoo.pickerview.listener.CustomListener;
+import com.example.xingxiaoyu.fdstory.entity.UserInfo;
+import com.example.xingxiaoyu.fdstory.util.WebIP;
 import com.facebook.drawee.view.SimpleDraweeView;
 
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 
 import butterknife.Bind;
@@ -68,12 +73,14 @@ public class MyselfFragment extends Fragment {
         ButterKnife.bind(this, view);
         initTime();
         initCustomOptionPicker();
-        myImage.setImageURI(Uri.parse("http://d.hiphotos.baidu.com/image/h%3D360/sign=856d60650933874483c5297a610fd937/55e736d12f2eb938e81944c7d0628535e5dd6f8a.jpg"));
+        myImage.setImageURI(Uri.parse(UserInfo.image));
         myImage.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 new PopupWindows(getActivity(), myImage);
-            };
+            }
+
+            ;
         });
         myFootMap.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -123,6 +130,7 @@ public class MyselfFragment extends Fragment {
                 //返回的分别是三个级别的选中位置
                 String tx = time.get(options1);
                 setTime.setText(tx);
+                saveTime();
             }
         })
                 .setLayoutRes(R.layout.pickerview_custom_options, new CustomListener() {
@@ -161,6 +169,31 @@ public class MyselfFragment extends Fragment {
         time.add("22:00");
         time.add("23:00");
         time.add("00:00");
+    }
+
+    private void saveTime() {
+        HttpURLConnection conn = null;
+        InputStream is = null;
+        try {
+            String path = "http://" + WebIP.IP + "/FDStoryServer/saveChangeTime";
+            path = path + "?userEmail=" + UserInfo.email + "&time" + setTime.getText();
+            conn = (HttpURLConnection) new URL(path).openConnection();
+            conn.setConnectTimeout(3000); // 设置超时时间
+            conn.setReadTimeout(3000);
+            conn.setDoInput(true);
+            conn.setRequestMethod("GET"); // 设置获取信息方式
+            conn.setRequestProperty("Charset", "UTF-8"); // 设置接收数据编码格式
+            if (conn.getResponseCode() == 200) {
+               return;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            // 意外退出时进行连接关闭保护
+            if (conn != null) {
+                conn.disconnect();
+            }
+        }
     }
 
     @Override
@@ -222,12 +255,14 @@ public class MyselfFragment extends Fragment {
 
         public void photo() {
             //拍照功能
+            //TODO
         }
 
-        public void album(){
+        public void album() {
             //相册功能
 //            String url = "/Users/xingxiaoyu/Documents/FDStory/app/src/main/res/drawable/wel_pic.png";
 //            EventBus.getDefault().post(new PhotoEvent(url));
+            //TODO
         }
     }
 

@@ -23,7 +23,21 @@ import com.baidu.mapapi.map.MapStatusUpdateFactory;
 import com.baidu.mapapi.map.MapView;
 import com.baidu.mapapi.map.Marker;
 import com.baidu.mapapi.map.MarkerOptions;
+import com.baidu.mapapi.map.OverlayOptions;
 import com.baidu.mapapi.model.LatLng;
+import com.example.xingxiaoyu.fdstory.entity.MarkerInfo;
+import com.example.xingxiaoyu.fdstory.entity.UserInfo;
+import com.example.xingxiaoyu.fdstory.util.ParseInput;
+import com.example.xingxiaoyu.fdstory.util.WebIP;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
@@ -33,19 +47,17 @@ import butterknife.ButterKnife;
  */
 
 public class MyFootPrintFragment extends Fragment {
-    private String urls[] = {
-            "http://farm8.staticflickr.com/7232/6913504132_a0fce67a0e_c.jpg",
-            "http://farm8.staticflickr.com/7232/6913504132_a0fce67a0e_c.jpg",
-    };
+    //    private String urls[] = {
+//            "http://farm8.staticflickr.com/7232/6913504132_a0fce67a0e_c.jpg",
+//            "http://farm8.staticflickr.com/7232/6913504132_a0fce67a0e_c.jpg",
+//    };
     @Bind(R.id.bmapView)
     MapView mMapView;
     @Bind(R.id.record)
     TextView mRecord;
     private View popView = null;//弹出框视图
     private BaiduMap mBaiduMap;
-    private LatLng[] latLngs;//坐标集合
-    private Marker[] Markers;//mark 集合
-    private InfoWindow mInfoWindow;
+    List<MarkerInfo> myMarkerInfos = new ArrayList<MarkerInfo>();
     BitmapDescriptor bd = BitmapDescriptorFactory
             .fromResource(R.drawable.icon_gcoding);
 
@@ -76,7 +88,7 @@ public class MyFootPrintFragment extends Fragment {
 
         mBaiduMap = mMapView.getMap();
         mBaiduMap.setMapType(BaiduMap.MAP_TYPE_NORMAL);
-        LatLng cenpt = new LatLng(31.2455045690,121.5064839346);//默认中心点 东方明珠
+        LatLng cenpt = new LatLng(31.2455045690, 121.5064839346);//默认中心点 东方明珠
         //定义地图状态
         MapStatus mMapStatus = new MapStatus.Builder()
                 .target(cenpt)
@@ -84,66 +96,107 @@ public class MyFootPrintFragment extends Fragment {
                 .build();
         //定义MapStatusUpdate对象，以便描述地图状态将要发生的变化
 
-
         MapStatusUpdate mMapStatusUpdate = MapStatusUpdateFactory.newMapStatus(mMapStatus);
         //改变地图状态
         mBaiduMap.setMapStatus(mMapStatusUpdate);
         mRecord.setText("已在15个地方留下美食足迹");
-        initOverlay();
+        readInfos();
+        addInfoOverLay(myMarkerInfos);
+        initMarkClick();
         return view;
     }
 
-    public void initOverlay() {
-        // add marker overlay
-        //连接数据库 获得总共的位置数量 假设为1
-        int num = 2;
-        double[][] locations = new double[num][2];
-        locations[0][0] = 31.2455045690;
-        locations[0][1] = 121.5064839346;
-        locations[1][0] = 39.942821;
-        locations[1][1] = 116.369199;
-        latLngs = new LatLng[num];
-        Markers = new Marker[num];
-        for (int i = 0; i < num; i++) {
-            double v1 = locations[i][0];
-            double v2 = locations[i][1];
-            latLngs[i] = new LatLng(v1, v2);//设置位置
-            MarkerOptions ooA = new MarkerOptions().position(latLngs[i]).icon(bd)
-                    .zIndex(9).draggable(false);
-            Markers[i] = (Marker) (mBaiduMap.addOverlay(ooA));
-            ImageView popImageView = (ImageView) popView.findViewById(R.id.pop_imageView);
-            popImageView.setImageURI(Uri.parse(urls[i]));
-            TextView title = (TextView) popView.findViewById(R.id.article_title);
-            TextView simple_content = (TextView) popView.findViewById(R.id.simple_content);
-            title.setText("小小蛋糕");
-            simple_content.setText("2016/05/10");
-            mInfoWindow = new InfoWindow(popView, latLngs[i], -47);
-        }
-        Button more = (Button) popView.findViewById(R.id.button_more);
-        more.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent i = new Intent(getActivity(), ArticleActivity.class);
-                i.putExtra("article_name", "这篇文章的ID");
-                startActivity(i);
-            }
-        });
-        View hide = (View) popView.findViewById(R.id.info);
-        hide.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mBaiduMap.hideInfoWindow();
-            }
-        });
-        mBaiduMap.setOnMarkerClickListener(new BaiduMap.OnMarkerClickListener() {
-            public boolean onMarkerClick(final Marker marker) {
-                LatLng ll = marker.getPosition();
-                mInfoWindow = new InfoWindow(popView, ll, -47);
-                mBaiduMap.showInfoWindow(mInfoWindow);
-                return true;
-            }
-        });
+    public void readInfos() {
+        HttpURLConnection conn = null;
+        InputStream is = null;
+        try {
+            String path = "http://" + WebIP.IP + "/FDStoryServer/getMyMarkerInfo";
+            path = path + "?userEmail=" + UserInfo.email;
+            conn = (HttpURLConnection) new URL(path).openConnection();
+            conn.setConnectTimeout(3000); // 设置超时时间
+            conn.setReadTimeout(3000);
+            conn.setDoInput(true);
+            conn.setRequestMethod("GET"); // 设置获取信息方式
+            conn.setRequestProperty("Charset", "UTF-8"); // 设置接收数据编码格式
+            if (conn.getResponseCode() == 200) {
+                is = conn.getInputStream();
+                String responseData = ParseInput.parseInfo(is);
+                //转换成json数据处理
+                JSONArray jsonArray = new JSONArray(responseData);
+                for (int i = 0; i < jsonArray.length(); i++) {       //一个循环代表一个对象
+                    JSONObject jsonObject = jsonArray.getJSONObject(i);
+                    int id = jsonObject.getInt("myMarkerID");
+                    double latitude = jsonObject.getDouble("myMarkerLatitude");
+                    double longitude = jsonObject.getDouble("myMarkerLongitude");
+                    String image = jsonObject.getString("myMarkerImage");
+                    String title = jsonObject.getString("myMarkerTitle");
+                    String date = jsonObject.getString("myMarkerDate");
+                    myMarkerInfos.add(new MarkerInfo(id, latitude, longitude, image, title, date));
 
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            // 意外退出时进行连接关闭保护
+            if (conn != null) {
+                conn.disconnect();
+            }
+        }
+    }
+
+    public void addInfoOverLay(List<MarkerInfo> infos) {
+        mBaiduMap.clear();
+        LatLng latLng = null;
+        OverlayOptions overlayOptions = null;
+        Marker marker = null;
+        for (MarkerInfo info : infos) {
+            latLng = new LatLng(info.getLatitude(), info.getLongitude());
+            overlayOptions = new MarkerOptions().position(latLng).icon(bd)
+                    .zIndex(9).draggable(false);
+            marker = (Marker) (mBaiduMap.addOverlay(overlayOptions));
+            Bundle bundle = new Bundle();
+            bundle.putSerializable("info", info);
+            marker.setExtraInfo(bundle);
+        }
+    }
+
+    public void initMarkClick() {
+        mBaiduMap.setOnMarkerClickListener(new BaiduMap.OnMarkerClickListener() {
+
+            @Override
+            public boolean onMarkerClick(final Marker marker) {
+                final MarkerInfo info = (MarkerInfo) marker.getExtraInfo().getSerializable("info");
+                InfoWindow infoWindow = null;
+                View popView = LayoutInflater.from(getActivity()).inflate(R.layout.infopopup, null);
+                ImageView popImageView = (ImageView) popView.findViewById(R.id.pop_imageView);
+                TextView title = (TextView) popView.findViewById(R.id.article_title);
+                TextView simple_content = (TextView) popView.findViewById(R.id.simple_content);
+                popImageView.setImageURI(Uri.parse(info.getImage()));
+                title.setText(info.getArticleName());
+                simple_content.setText(info.getDate());
+                LatLng ll = marker.getPosition();
+                infoWindow = new InfoWindow(popView, ll, -47);
+                mBaiduMap.showInfoWindow(infoWindow);
+                View hide = (View) popView.findViewById(R.id.info);
+                hide.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        mBaiduMap.hideInfoWindow();
+                    }
+                });
+                Button more = (Button) popView.findViewById(R.id.button_more);
+                more.setOnClickListener(new View.OnClickListener() {
+                    public void onClick(View v) {
+                        Intent i = new Intent(getActivity(), ArticleActivity.class);
+                        i.putExtra("article_id", info.getId());
+                        startActivity(i);
+                    }
+                });
+                return true;
+
+            }
+        });
     }
 
     @Override

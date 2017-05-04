@@ -22,7 +22,9 @@ import android.widget.TextView;
 
 import com.example.xingxiaoyu.fdstory.MainActivity;
 import com.example.xingxiaoyu.fdstory.R;
-import com.example.xingxiaoyu.fdstory.WebIP;
+import com.example.xingxiaoyu.fdstory.entity.UserInfo;
+import com.example.xingxiaoyu.fdstory.util.ParseInput;
+import com.example.xingxiaoyu.fdstory.util.WebIP;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -31,7 +33,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.HashMap;
 
 /**
  * Created by xingxiaoyu on 17/4/17.
@@ -131,12 +132,10 @@ public class LoginMainFragment extends Fragment {
     }
 
     private boolean isEmailValid(String email) {
-        //TODO: Replace this with your own logic
         return email.contains("@");
     }
 
     private boolean isPasswordValid(String password) {
-        //TODO: Replace this with your own logic
         return password.length() > 5;
     }
 
@@ -184,7 +183,7 @@ public class LoginMainFragment extends Fragment {
             HttpURLConnection conn = null;
             InputStream is = null;
             try {
-                String path = "http://10.0.2.2:8080/FDStoryServer/login";
+                String path = "http://" + WebIP.IP + "/FDStoryServer/userLogin";
                 path = path + "?userEmail=" + mEmail + "&userPassword=" + mPassword;
                 Log.i("LoginWeb", "NO1. " + mEmail + " " + mPassword);
                 conn = (HttpURLConnection) new URL(path).openConnection();
@@ -195,17 +194,17 @@ public class LoginMainFragment extends Fragment {
                 conn.setRequestProperty("Charset", "UTF-8"); // 设置接收数据编码格式
                 Log.i("LoginWeb", "ResponseCoode" + conn.getResponseCode());
                 if (conn.getResponseCode() == 200) {
-                    Log.i("LoginWeb","NO2. "+mEmail+" "+mPassword);
+                    Log.i("LoginWeb", "NO2. " + mEmail + " " + mPassword);
                     is = conn.getInputStream();
-                    String responseData=parseInfo(is);
+                    String responseData = ParseInput.parseInfo(is);
                     //转换成json数据处理
-                    JSONArray jsonArray=new JSONArray(responseData);
-                    for(int i=0;i<jsonArray.length();i++){       //一个循环代表一个对象
+                    JSONArray jsonArray = new JSONArray(responseData);
+                    for (int i = 0; i < jsonArray.length(); i++) {       //一个循环代表一个对象
                         JSONObject jsonObject = jsonArray.getJSONObject(i);
-                        return jsonObject.getBoolean("loginResult")==true;
+                        return jsonObject.getBoolean("loginResult") == true;
                     }
                 }
-            }catch (Exception e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             } finally {
                 // 意外退出时进行连接关闭保护
@@ -217,31 +216,15 @@ public class LoginMainFragment extends Fragment {
 
         }
 
-        // 将输入流转化为 String 型
-        private  String parseInfo(InputStream inStream) throws Exception {
-            byte[] data = read(inStream);
-            // 转化为字符串
-            return new String(data, "UTF-8");
-        }
 
-        // 将输入流转化为byte型
-        public  byte[] read(InputStream inStream) throws Exception {
-            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-            byte[] buffer = new byte[1024];
-            int len = 0;
-            while ((len = inStream.read(buffer)) != -1) {
-                outputStream.write(buffer, 0, len);
-            }
-            inStream.close();
-            return outputStream.toByteArray();
-        }
         @Override
         protected void onPostExecute(final Boolean success) {
             mAuthTask = null;
             showProgress(false);
             if (success) {
                 Intent intent = new Intent(loginActivity, MainActivity.class);
-                intent.putExtra("email", email);
+                UserInfo.email = email;
+                initUser();
                 loginActivity.startActivity(intent);
                 loginActivity.finish();
             } else {
@@ -250,6 +233,39 @@ public class LoginMainFragment extends Fragment {
             }
         }
 
+        //登陆成功后获得用户名称 邮箱 头像的信息
+        private void initUser(){
+            HttpURLConnection conn = null;
+            InputStream is = null;
+            try {
+                String path = "http://" + WebIP.IP + "/FDStoryServer/userInfo";
+                path = path + "?userEmail=" + mEmail;
+                conn = (HttpURLConnection) new URL(path).openConnection();
+                conn.setConnectTimeout(3000); // 设置超时时间
+                conn.setReadTimeout(3000);
+                conn.setDoInput(true);
+                conn.setRequestMethod("GET"); // 设置获取信息方式
+                conn.setRequestProperty("Charset", "UTF-8"); // 设置接收数据编码格式
+                if (conn.getResponseCode() == 200) {
+                    is = conn.getInputStream();
+                    String responseData = ParseInput.parseInfo(is);
+                    //转换成json数据处理
+                    JSONArray jsonArray = new JSONArray(responseData);
+                    for (int i = 0; i < jsonArray.length(); i++) {       //一个循环代表一个对象
+                        JSONObject jsonObject = jsonArray.getJSONObject(i);
+                        UserInfo.image = jsonObject.getString("userImage");
+                        UserInfo.name = jsonObject.getString("userName");
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                // 意外退出时进行连接关闭保护
+                if (conn != null) {
+                    conn.disconnect();
+                }
+            }
+        }
 
         @Override
         protected void onCancelled() {

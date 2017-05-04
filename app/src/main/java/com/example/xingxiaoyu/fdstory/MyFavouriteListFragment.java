@@ -17,8 +17,18 @@ import com.baoyz.swipemenulistview.SwipeMenu;
 import com.baoyz.swipemenulistview.SwipeMenuCreator;
 import com.baoyz.swipemenulistview.SwipeMenuItem;
 import com.baoyz.swipemenulistview.SwipeMenuListView;
+import com.example.xingxiaoyu.fdstory.entity.Comment;
 import com.example.xingxiaoyu.fdstory.entity.Favourite;
+import com.example.xingxiaoyu.fdstory.entity.UserInfo;
+import com.example.xingxiaoyu.fdstory.util.ParseInput;
+import com.example.xingxiaoyu.fdstory.util.WebIP;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -66,15 +76,41 @@ public class MyFavouriteListFragment extends Fragment {
     private void initData() {
         mFavouriteList = new ArrayList<>();//从数据库读取
         Favourite favourite = null;
-        for (int i = 0; i < 15; i++) {
-            if (i % 2 == 0) {
-                favourite = new Favourite(i + "", "标题" + i, "http://farm9.staticflickr.com/8335/8144074340_38a4c622ab.jpg", "作者" + i);
+        HttpURLConnection conn = null;
+        InputStream is = null;
+        try {
+            String path = "http://" + WebIP.IP + "/FDStoryServer/getMyFavouriteInfo";
+            path = path + "?userEmail=" + UserInfo.email;
+            conn = (HttpURLConnection) new URL(path).openConnection();
+            conn.setConnectTimeout(3000); // 设置超时时间
+            conn.setReadTimeout(3000);
+            conn.setDoInput(true);
+            conn.setRequestMethod("GET"); // 设置获取信息方式
+            conn.setRequestProperty("Charset", "UTF-8"); // 设置接收数据编码格式
+            if (conn.getResponseCode() == 200) {
+                is = conn.getInputStream();
+                String responseData = ParseInput.parseInfo(is);
+                //转换成json数据处理
+                JSONArray jsonArray = new JSONArray(responseData);
+                for (int i = 0; i < jsonArray.length(); i++) {       //一个循环代表一个对象
+                    JSONObject jsonObject = jsonArray.getJSONObject(i);
+                    int id = jsonObject.getInt("favouriteID");
+                    String title = jsonObject.getString("favouriteTitle");
+                    String image = jsonObject.getString("favouriteImage");
+                    String author = jsonObject.getString("favouriteAuthor");
+                    mFavouriteList.add(new Favourite(id, title, image, author));
+
+                }
             }
-            if (i % 2 == 1) {
-                favourite = new Favourite(i + "", "标题" + i, "http://farm9.staticflickr.com/8335/8144074340_38a4c622ab.jpg", "作者" + i);
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            // 意外退出时进行连接关闭保护
+            if (conn != null) {
+                conn.disconnect();
             }
-            mFavouriteList.add(favourite);
         }
+
         // step 1. create a MenuCreator
         SwipeMenuCreator creator = new SwipeMenuCreator() {
             @Override
@@ -101,14 +137,10 @@ public class MyFavouriteListFragment extends Fragment {
         favouritesList.setOnMenuItemClickListener(new SwipeMenuListView.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(int position, SwipeMenu menu, int index) {
-                Favourite item = mFavouriteList.get(position);
                 switch (index) {
                     case 0:
                         // delete
-//					delete(item);
-                        mFavouriteList.remove(position);
-                        mBaseAdapter.notifyDataSetChanged();
-                        //更新数据库
+                        deleteItem(position);
                         break;
                 }
                 return false;
@@ -118,16 +150,44 @@ public class MyFavouriteListFragment extends Fragment {
         favouritesList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                int post=position;//位置
-                Toast.makeText(getActivity(), "点击了第"+post+"个", Toast.LENGTH_SHORT).show();
+                int post = position;//位置
+                Toast.makeText(getActivity(), "点击了第" + post + "个", Toast.LENGTH_SHORT).show();
                 //显示这片文章的详细内容
                 Intent i = new Intent(getActivity(), ArticleActivity.class);
-                i.putExtra("article_name", "这篇文章的ID"+post);
+                i.putExtra("article_id", mFavouriteList.get(position).getId());
                 startActivity(i);
 
             }
         });
+
     }
+
+    private void deleteItem(int position) {
+        HttpURLConnection conn = null;
+        InputStream is = null;
+        try {
+            String path = "http://" + WebIP.IP + "/FDStoryServer/deleteFavouriteItem";
+            path = path + "?myFavouriteID=" + mFavouriteList.get(position).getId();
+            conn = (HttpURLConnection) new URL(path).openConnection();
+            conn.setConnectTimeout(3000); // 设置超时时间
+            conn.setReadTimeout(3000);
+            conn.setDoInput(true);
+            conn.setRequestMethod("GET"); // 设置获取信息方式
+            conn.setRequestProperty("Charset", "UTF-8"); // 设置接收数据编码格式
+            if (conn.getResponseCode() == 200) {
+                mFavouriteList.remove(position);
+                mBaseAdapter.notifyDataSetChanged();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            // 意外退出时进行连接关闭保护
+            if (conn != null) {
+                conn.disconnect();
+            }
+        }
+    }
+
 
     private int dp2px(int dp) {
         return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp,

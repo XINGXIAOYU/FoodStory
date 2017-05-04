@@ -19,7 +19,7 @@ public class CommentActivity extends AppCompatActivity {
     TextView mToolBarTextView;
     private String TAG = CommentActivity.class.getSimpleName();
     FragmentManager fm;
-    private String articleID;
+    private int articleID;
     private CommentListFragment mCommentListFragment;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,7 +35,7 @@ public class CommentActivity extends AppCompatActivity {
      */
     private void setDefaultFragment() {
         fm = getSupportFragmentManager();
-        articleID = getIntent().getStringExtra("article_id");
+        articleID = getIntent().getIntExtra("article_id",-1);
         mCommentListFragment = mCommentListFragment.newInstance(articleID);
         addFragment(mCommentListFragment, true, R.id.container);
     }

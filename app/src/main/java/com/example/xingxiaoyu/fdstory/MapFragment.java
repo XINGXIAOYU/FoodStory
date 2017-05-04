@@ -2,9 +2,6 @@ package com.example.xingxiaoyu.fdstory;
 
 
 import android.content.Intent;
-import android.content.pm.ApplicationInfo;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -25,16 +22,31 @@ import com.baidu.location.LocationClient;
 import com.baidu.location.LocationClientOption;
 import com.baidu.mapapi.map.BaiduMap;
 import com.baidu.mapapi.map.BitmapDescriptor;
+import com.baidu.mapapi.map.BitmapDescriptorFactory;
 import com.baidu.mapapi.map.InfoWindow;
 import com.baidu.mapapi.map.MapStatus;
 import com.baidu.mapapi.map.MapStatusUpdate;
 import com.baidu.mapapi.map.MapStatusUpdateFactory;
 import com.baidu.mapapi.map.MapView;
 import com.baidu.mapapi.map.Marker;
+import com.baidu.mapapi.map.MarkerOptions;
 import com.baidu.mapapi.map.MyLocationConfiguration;
 import com.baidu.mapapi.map.MyLocationData;
+import com.baidu.mapapi.map.OverlayOptions;
 import com.baidu.mapapi.model.LatLng;
+import com.example.xingxiaoyu.fdstory.entity.MarkerInfo;
+import com.example.xingxiaoyu.fdstory.util.ParseInput;
+import com.example.xingxiaoyu.fdstory.util.WebIP;
 import com.facebook.drawee.backends.pipeline.Fresco;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
@@ -46,21 +58,12 @@ import static android.content.Context.SENSOR_SERVICE;
  */
 
 public class MapFragment extends Fragment implements SensorEventListener {
-
-    private String urls[] = {
-            "http://farm8.staticflickr.com/7232/6913504132_a0fce67a0e_c.jpg",
-    };
-
-
     @Bind(R.id.bmapView)
     MapView mMapView;
-    //    private View overlayview = null;//mark 视图
-    private View popView = null;//弹出框视图
     private BaiduMap mBaiduMap;
-    private LatLng[] latLngs;//坐标集合
-    private Marker[] Markers;//mark 集合
-    private InfoWindow mInfoWindow;
-    private BitmapDescriptor bd;
+    BitmapDescriptor bd = BitmapDescriptorFactory
+            .fromResource(R.drawable.icon_gcoding);
+    List<MarkerInfo> markerInfos = new ArrayList<MarkerInfo>();
 
     //定位相关
     LocationClient mLocClient;
@@ -99,7 +102,6 @@ public class MapFragment extends Fragment implements SensorEventListener {
         ButterKnife.bind(this, view);
         mSensorManager = (SensorManager) this.getActivity().getSystemService(SENSOR_SERVICE);//获取传感器管理服务
         mCurrentMode = MyLocationConfiguration.LocationMode.NORMAL;
-        popView = LayoutInflater.from(this.getActivity()).inflate(R.layout.infopopup, null);
         mMapView.getChildAt(2).setPadding(0, 0, 0, 200);//这是控制缩放控件的位置
         mBaiduMap = mMapView.getMap();
         mBaiduMap.setMapType(BaiduMap.MAP_TYPE_NORMAL);
@@ -114,7 +116,12 @@ public class MapFragment extends Fragment implements SensorEventListener {
         MapStatusUpdate mMapStatusUpdate = MapStatusUpdateFactory.newMapStatus(mMapStatus);
         //改变地图状态
         mBaiduMap.setMapStatus(mMapStatusUpdate);
-        initOverlay();
+//        markerInfos.add(new MarkerInfo(1, 31.2455045690, 121.5064839346, "http://farm8.staticflickr.com/7232/6913504132_a0fce67a0e_c.jpg", "蛋糕1", "2010/5/10"));
+//        markerInfos.add(new MarkerInfo(2, 28.2455045690, 121.5064839346, "http://farm5.staticflickr.com/4074/4789681330_2e30dfcacb_b.jpg", "蛋糕2", "2010/6/10"));
+        //从数据库获取markerInfos的信息
+        readInfos();
+        addInfoOverLay(markerInfos);
+        initMarkClick();
         requestLocButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -123,6 +130,103 @@ public class MapFragment extends Fragment implements SensorEventListener {
         });
         return view;
     }
+
+    public void readInfos(){
+        HttpURLConnection conn = null;
+        InputStream is = null;
+        try {
+            String path = "http://" + WebIP.IP + "/FDStoryServer/getMarkerInfo";
+            conn = (HttpURLConnection) new URL(path).openConnection();
+            conn.setConnectTimeout(3000); // 设置超时时间
+            conn.setReadTimeout(3000);
+            conn.setDoInput(true);
+            conn.setRequestMethod("GET"); // 设置获取信息方式
+            conn.setRequestProperty("Charset", "UTF-8"); // 设置接收数据编码格式
+            if (conn.getResponseCode() == 200) {
+                is = conn.getInputStream();
+                String responseData = ParseInput.parseInfo(is);
+                //转换成json数据处理
+                JSONArray jsonArray = new JSONArray(responseData);
+                for (int i = 0; i < jsonArray.length(); i++) {       //一个循环代表一个对象
+                    JSONObject jsonObject = jsonArray.getJSONObject(i);
+                    int id = jsonObject.getInt("markerID");
+                    double latitude = jsonObject.getDouble("markerLatitude");
+                    double longitude = jsonObject.getDouble("markerLongitude");
+                    String image = jsonObject.getString("markerImage");
+                    String title = jsonObject.getString("markerTitle");
+                    String date = jsonObject.getString("markerDate");
+                    markerInfos.add(new MarkerInfo(id,latitude,longitude,image,title,date));
+
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            // 意外退出时进行连接关闭保护
+            if (conn != null) {
+                conn.disconnect();
+            }
+        }
+    }
+
+
+    public void addInfoOverLay(List<MarkerInfo> infos) {
+        mBaiduMap.clear();
+        LatLng latLng = null;
+        OverlayOptions overlayOptions = null;
+        Marker marker = null;
+        for (MarkerInfo info : infos) {
+            latLng = new LatLng(info.getLatitude(), info.getLongitude());
+            overlayOptions = new MarkerOptions().position(latLng).icon(bd)
+                    .zIndex(9).draggable(false);
+            marker = (Marker) (mBaiduMap.addOverlay(overlayOptions));
+            Bundle bundle = new Bundle();
+            bundle.putSerializable("info", info);
+            marker.setExtraInfo(bundle);
+        }
+    }
+
+    public void initMarkClick() {
+        mBaiduMap.setOnMarkerClickListener(new BaiduMap.OnMarkerClickListener() {
+
+            @Override
+            public boolean onMarkerClick(final Marker marker) {
+                final MarkerInfo info = (MarkerInfo) marker.getExtraInfo().getSerializable("info");
+                InfoWindow infoWindow = null;
+                View popView = LayoutInflater.from(getActivity()).inflate(R.layout.infopopup, null);
+                ImageView popImageView = (ImageView) popView.findViewById(R.id.pop_imageView);
+                TextView title = (TextView) popView.findViewById(R.id.article_title);
+                TextView simple_content = (TextView) popView.findViewById(R.id.simple_content);
+                popImageView.setImageURI(Uri.parse(info.getImage()));
+                title.setText(info.getArticleName());
+                simple_content.setText(info.getDate());
+                LatLng ll = marker.getPosition();
+                infoWindow = new InfoWindow(popView, ll, -47);
+                mBaiduMap.showInfoWindow(infoWindow);
+                View hide = (View) popView.findViewById(R.id.info);
+                hide.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        mBaiduMap.hideInfoWindow();
+                    }
+                });
+                Button more = (Button) popView.findViewById(R.id.button_more);
+                more.setOnClickListener(new View.OnClickListener() {
+                    public void onClick(View v) {
+                        Intent i = new Intent(getActivity(), ArticleActivity.class);
+                        i.putExtra("article_id", info.getId());
+                        startActivity(i);
+                    }
+                });
+                return true;
+
+            }
+        });
+    }
+
+//
+//
+//
 
     private void startLocation() {
         mLocClient = new LocationClient(this.getActivity());
@@ -168,64 +272,6 @@ public class MapFragment extends Fragment implements SensorEventListener {
 
         public void onReceivePoi(BDLocation poiLocation) {
         }
-    }
-
-    public void initOverlay() {
-        // add marker overlay
-        //连接数据库 获得总共的位置数量 假设为1
-        int num = 1;
-        double[][] locations = new double[num][2];
-        locations[0][0] = 31.2455045690;
-        locations[0][1] = 121.5064839346;
-        latLngs = new LatLng[num];
-        Markers = new Marker[num];
-        for (int i = 0; i < num; i++) {
-            double v1 = locations[i][0];
-            double v2 = locations[i][1];
-            latLngs[i] = new LatLng(v1, v2);//设置位置
-            ImageView popImageView = (ImageView) popView.findViewById(R.id.pop_imageView);
-            popImageView.setImageURI(Uri.parse(urls[i]));
-            TextView title = (TextView) popView.findViewById(R.id.article_title);
-            TextView simple_content = (TextView) popView.findViewById(R.id.simple_content);
-            title.setText("小小蛋糕");
-            simple_content.setText("2016/05/10");
-            mInfoWindow = new InfoWindow(popView, latLngs[i], -47);
-            mBaiduMap.showInfoWindow(mInfoWindow);
-        }
-        Button more = (Button) popView.findViewById(R.id.button_more);
-        more.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent i = new Intent(getActivity(), ArticleActivity.class);
-                i.putExtra("article_name", "这篇文章的ID");
-                startActivity(i);
-            }
-        });
-    }
-
-
-    public Bitmap getRes(String name) {
-        ApplicationInfo appInfo = this.getActivity().getApplicationInfo();
-        int resID = getResources().getIdentifier(name, "drawable", appInfo.packageName);
-        return BitmapFactory.decodeResource(getResources(), resID);
-    }
-
-    private Bitmap getViewBitmap(View addViewContent) {
-
-        addViewContent.setDrawingCacheEnabled(true);
-
-        addViewContent.measure(
-                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
-                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
-        addViewContent.layout(0, 0,
-                addViewContent.getMeasuredWidth(),
-                addViewContent.getMeasuredHeight());
-
-        addViewContent.buildDrawingCache();
-        Bitmap cacheBitmap = addViewContent.getDrawingCache();
-        Bitmap bitmap = Bitmap.createBitmap(cacheBitmap);
-
-        return bitmap;
     }
 
     @Override

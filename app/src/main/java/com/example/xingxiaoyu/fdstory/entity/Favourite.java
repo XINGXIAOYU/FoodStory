@@ -7,7 +7,7 @@ package com.example.xingxiaoyu.fdstory.entity;
 public class Favourite {
 
 
-    private String id;
+    private int id;
     private String articleName;
     private String imgUrl;
     private String author;
@@ -15,18 +15,18 @@ public class Favourite {
     public Favourite() {
     }
 
-    public Favourite(String id, String articleName, String imgUrl, String author) {
+    public Favourite(int id, String articleName, String imgUrl, String author) {
         this.id = id;
         this.articleName = articleName;
         this.imgUrl = imgUrl;
         this.author = author;
     }
 
-    public String getId() {
+    public int getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(int id) {
         this.id = id;
     }
 

@@ -17,8 +17,18 @@ import android.widget.ListView;
 import android.widget.Toast;
 
 import com.example.xingxiaoyu.fdstory.entity.Comment;
+import com.example.xingxiaoyu.fdstory.entity.UserInfo;
+import com.example.xingxiaoyu.fdstory.util.ParseInput;
+import com.example.xingxiaoyu.fdstory.util.WebIP;
 import com.facebook.drawee.backends.pipeline.Fresco;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -39,23 +49,23 @@ public class CommentListFragment extends Fragment {
     EditText message;
     @Bind(R.id.liuyan)
     LinearLayout liuYan;
-    @Bind(R.id.close)
-    Button closeButton;
+    @Bind(R.id.cancel)
+    Button cancelButton;
     @Bind(R.id.submit)
-    Button submintButton;
+    Button submitButton;
 
     //列表数据
-    List<Comment> mCommentList;
+    List<Comment> mCommentList = new ArrayList<Comment>();
     //回复的内容
     String info = "";
     //adapter
     BaseAdapter mBaseAdapter;
 
-    public static CommentListFragment newInstance(String param1) {
+    public static CommentListFragment newInstance(int param1) {
         //获取文章ID 获取评论
         CommentListFragment fragment = new CommentListFragment();
         Bundle args = new Bundle();
-        args.putString("agrs1", param1);
+        args.putInt("article_id", param1);
         fragment.setArguments(args);
         return fragment;
     }
@@ -82,16 +92,40 @@ public class CommentListFragment extends Fragment {
     }
 
     private void initData() {
-        mCommentList = new ArrayList<>();//从数据库读取
-        Comment comment = null;
-        for (int i = 0; i < 15; i++) {
-            if (i % 2 == 0) {
-                comment = new Comment(i + "", "张三" + i, "http://d.hiphotos.baidu.com/image/h%3D360/sign=856d60650933874483c5297a610fd937/55e736d12f2eb938e81944c7d0628535e5dd6f8a.jpg", "今天真开心，敲了一天代码。", "2015-03-04 23:02:06");
+        HttpURLConnection conn = null;
+        InputStream is = null;
+        try {
+            String path = "http://" + WebIP.IP + "/FDStoryServer/getCommentInfo";
+            path = path + "?articleID=" + getArguments().getInt("article_id");
+            conn = (HttpURLConnection) new URL(path).openConnection();
+            conn.setConnectTimeout(3000); // 设置超时时间
+            conn.setReadTimeout(3000);
+            conn.setDoInput(true);
+            conn.setRequestMethod("GET"); // 设置获取信息方式
+            conn.setRequestProperty("Charset", "UTF-8"); // 设置接收数据编码格式
+            if (conn.getResponseCode() == 200) {
+                is = conn.getInputStream();
+                String responseData = ParseInput.parseInfo(is);
+                //转换成json数据处理
+                JSONArray jsonArray = new JSONArray(responseData);
+                for (int i = 0; i < jsonArray.length(); i++) {       //一个循环代表一个对象
+                    JSONObject jsonObject = jsonArray.getJSONObject(i);
+                    int id = jsonObject.getInt("commentID");
+                    String commenter = jsonObject.getString("commenter");
+                    String image = jsonObject.getString("commenterImage");
+                    String content = jsonObject.getString("commentContent");
+                    String date = jsonObject.getString("commentDate");
+                    mCommentList.add(new Comment(id, commenter, image, content, date));
+
+                }
             }
-            if (i % 2 == 1) {
-                comment = new Comment(i + "", "张三" + i, "http://g.hiphotos.baidu.com/image/h%3D360/sign=c7fd97e3bc0e7bec3cda05e71f2cb9fa/960a304e251f95ca2f34115acd177f3e6609521d.jpg", "今天真开心，敲了一天代码。", "2015-03-04 23:02:06");
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            // 意外退出时进行连接关闭保护
+            if (conn != null) {
+                conn.disconnect();
             }
-            mCommentList.add(comment);
         }
     }
 
@@ -101,14 +135,14 @@ public class CommentListFragment extends Fragment {
     }
 
 
-    @OnClick({R.id.message, R.id.liuyan, R.id.close, R.id.submit})
+    @OnClick({R.id.message, R.id.liuyan, R.id.cancel, R.id.submit})
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.message:
                 break;
             case R.id.liuyan:
                 break;
-            case R.id.close:
+            case R.id.cancel:
                 comment(false);
                 break;
             case R.id.submit:
@@ -117,34 +151,126 @@ public class CommentListFragment extends Fragment {
         }
     }
 
-    private void saveComment() {//存储到数据库中
+    private void saveComment() {
         if (!TextUtils.isEmpty(message.getText())) {
             info = message.getText().toString();
-            updateComment();
+            Comment comment = new Comment(getNextCommentID(), UserInfo.name, UserInfo.image, info, getCurrentTime());
+            HttpURLConnection conn = null;
+            InputStream is = null;
+            try {
+                String path = "http://" + WebIP.IP + "/FDStoryServer/saveComment";
+                conn = (HttpURLConnection) new URL(path).openConnection();
+                conn.setConnectTimeout(3000); // 设置超时时间
+                conn.setReadTimeout(3000);
+                conn.setDoInput(true);
+                conn.setRequestMethod("POST"); // 设置获取信息方式
+                String data = "commentID" + comment.getId() + "&commenter" + comment.getNickName()
+                        + "&image" + comment.getImgUrl() + "&content" + comment.getContent()
+                        + "&time" + comment.getTime() + "&articleID" + getArguments().getInt("article_id");
+                conn.setRequestProperty("Charset", "UTF-8"); // 设置接收数据编码格式
+                conn.setRequestProperty("Content-Length", data.length() + "");
+                conn.setDoOutput(true);
+                OutputStream outputStream = conn.getOutputStream();
+                outputStream.write(data.getBytes());
+                outputStream.flush();
+                outputStream.close();
+                if (conn.getResponseCode() == 200) {
+                    updateComment(comment);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                // 意外退出时进行连接关闭保护
+                if (conn != null) {
+                    conn.disconnect();
+                }
+            }
         } else {
             Toast.makeText(getActivity(), "请输入内容", Toast.LENGTH_SHORT).show();
         }
     }
 
-    private void updateComment() {
-        Comment comment = null;
-        comment = new Comment(666 + "", "张三" + 666, "http://d.hiphotos.baidu.com/image/h%3D360/sign=856d60650933874483c5297a610fd937/55e736d12f2eb938e81944c7d0628535e5dd6f8a.jpg", info, "2015-03-04 23:02:06");
+
+    private void updateComment(Comment comment) {
         mCommentList.add(0, comment);
         mBaseAdapter.notifyDataSetChanged();
-        //还原
         comment(false);
     }
 
+    private int getNextCommentID() {
+        HttpURLConnection conn = null;
+        InputStream is = null;
+        try {
+            String path = "http://" + WebIP.IP + "/FDStoryServer/getNextCommentID";
+            conn = (HttpURLConnection) new URL(path).openConnection();
+            conn.setConnectTimeout(3000); // 设置超时时间
+            conn.setReadTimeout(3000);
+            conn.setDoInput(true);
+            conn.setRequestMethod("GET"); // 设置获取信息方式
+            conn.setRequestProperty("Charset", "UTF-8"); // 设置接收数据编码格式
+            if (conn.getResponseCode() == 200) {
+                is = conn.getInputStream();
+                String responseData = ParseInput.parseInfo(is);
+                //转换成json数据处理
+                JSONArray jsonArray = new JSONArray(responseData);
+                for (int i = 0; i < jsonArray.length(); i++) {       //一个循环代表一个对象
+                    JSONObject jsonObject = jsonArray.getJSONObject(i);
+                    int id = jsonObject.getInt("nextCommentID");
+                    return id;
+
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            // 意外退出时进行连接关闭保护
+            if (conn != null) {
+                conn.disconnect();
+            }
+        }
+        return 0;
+    }
+
+    private String getCurrentTime() {
+        HttpURLConnection conn = null;
+        InputStream is = null;
+        try {
+            String path = "http://" + WebIP.IP + "/FDStoryServer/getCurrentTime";
+            conn = (HttpURLConnection) new URL(path).openConnection();
+            conn.setConnectTimeout(3000); // 设置超时时间
+            conn.setReadTimeout(3000);
+            conn.setDoInput(true);
+            conn.setRequestMethod("GET"); // 设置获取信息方式
+            conn.setRequestProperty("Charset", "UTF-8"); // 设置接收数据编码格式
+            if (conn.getResponseCode() == 200) {
+                is = conn.getInputStream();
+                String responseData = ParseInput.parseInfo(is);
+                //转换成json数据处理
+                JSONArray jsonArray = new JSONArray(responseData);
+                for (int i = 0; i < jsonArray.length(); i++) {       //一个循环代表一个对象
+                    JSONObject jsonObject = jsonArray.getJSONObject(i);
+                    String time = jsonObject.getString("currentTime");
+                    return time;
+
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            // 意外退出时进行连接关闭保护
+            if (conn != null) {
+                conn.disconnect();
+            }
+        }
+        return null;
+    }
+
+
     private void comment(boolean flag) {
-        if (flag) {
-            liuYan.setVisibility(View.VISIBLE);
-            onFocusChange(flag);
-        } else {
-            liuYan.setVisibility(View.GONE);
+        if (!flag) {
+            message.setText("");
             onFocusChange(flag);
         }
-
-
     }
 
     /**

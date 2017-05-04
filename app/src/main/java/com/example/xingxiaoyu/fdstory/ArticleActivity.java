@@ -14,6 +14,8 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
 
+import com.example.xingxiaoyu.fdstory.util.ParseInput;
+import com.example.xingxiaoyu.fdstory.util.WebIP;
 import com.yalantis.contextmenu.lib.ContextMenuDialogFragment;
 import com.yalantis.contextmenu.lib.MenuObject;
 import com.yalantis.contextmenu.lib.MenuParams;
@@ -21,7 +23,12 @@ import com.yalantis.contextmenu.lib.interfaces.OnMenuItemClickListener;
 import com.yalantis.contextmenu.lib.interfaces.OnMenuItemLongClickListener;
 
 import org.greenrobot.eventbus.EventBus;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,7 +41,7 @@ public class ArticleActivity extends AppCompatActivity implements OnMenuItemClic
     private String TAG = ArticleActivity.class.getSimpleName();
     private ContextMenuDialogFragment mMenuDialogFragment;
     private ArticleFragment mArticleFragment;
-    private String article_name;
+    private int article_id;
     FragmentManager fm;
 
     @Override
@@ -52,10 +59,7 @@ public class ArticleActivity extends AppCompatActivity implements OnMenuItemClic
      */
     private void setDefaultFragment() {
         fm = getSupportFragmentManager();
-        article_name = getIntent().getStringExtra("article_name");
-        //根据ID获得图片等信息
-        String pic = "http://farm8.staticflickr.com/7232/6913504132_a0fce67a0e_c.jpg";
-        mArticleFragment = mArticleFragment.newInstance(article_name,pic);
+        getArticleInfo();
         addFragment(mArticleFragment, true, R.id.container);
     }
 
@@ -152,26 +156,24 @@ public class ArticleActivity extends AppCompatActivity implements OnMenuItemClic
 
     @Override
     public void onMenuItemClick(View clickedView, int position) {
-        switch (position){
+        switch (position) {
             case 1:
                 //评论
-                Intent i = new Intent(this,CommentActivity.class);
-                i.putExtra("article_id","这篇文章的ID");
+                Intent i = new Intent(this, CommentActivity.class);
+                i.putExtra("article_id", article_id);
                 startActivity(i);
                 break;
             case 2:
                 //点赞
-                int num = 9;//从数据库获得点赞数
+                int num = mArticleFragment.getArguments().getInt("article_like");//从数据库获得点赞数
                 num++;
-                //存入数据库
-                EventBus.getDefault().post(new MyEvent(num,1));
+                saveLikeNum(num);
                 break;
             case 3:
                 //收藏
-                int num2 = 10;//从数据库获得点赞数
+                int num2 = mArticleFragment.getArguments().getInt("article_save");//从数据库获得点赞数
                 num2++;
-                //存入数据库
-                EventBus.getDefault().post(new MyEvent(num2,2));
+                saveSaveNum(num2);
                 break;
         }
         Toast.makeText(this, "Clicked on position: " + position, Toast.LENGTH_SHORT).show();
@@ -183,5 +185,96 @@ public class ArticleActivity extends AppCompatActivity implements OnMenuItemClic
         Toast.makeText(this, "Long clicked on position: " + position, Toast.LENGTH_SHORT).show();
     }
 
+    //根据文章的ID获取相关信息
+    private void getArticleInfo() {
+        HttpURLConnection conn = null;
+        InputStream is = null;
+        try {
+            String path = "http://" + WebIP.IP + "/FDStoryServer/getArticleInfo";
+            path = path + "?articleID=" + getIntent().getStringExtra("article_id");
+            conn = (HttpURLConnection) new URL(path).openConnection();
+            conn.setConnectTimeout(3000); // 设置超时时间
+            conn.setReadTimeout(3000);
+            conn.setDoInput(true);
+            conn.setRequestMethod("GET"); // 设置获取信息方式
+            conn.setRequestProperty("Charset", "UTF-8"); // 设置接收数据编码格式
+            if (conn.getResponseCode() == 200) {
+                is = conn.getInputStream();
+                String responseData = ParseInput.parseInfo(is);
+                //转换成json数据处理
+                JSONArray jsonArray = new JSONArray(responseData);
+                for (int i = 0; i < jsonArray.length(); i++) {       //一个循环代表一个对象
+                    JSONObject jsonObject = jsonArray.getJSONObject(i);
+                    article_id = jsonObject.getInt("articleID");
+                    String image = jsonObject.getString("articleImage");
+                    String title = jsonObject.getString("articleTitle");
+                    String author = jsonObject.getString("articleAuthor");
+                    String date = jsonObject.getString("articleDate");
+                    String content = jsonObject.getString("articleContent");
+                    int like = jsonObject.getInt("likeNumber");
+                    int save = jsonObject.getInt("saveNumber");
+                    mArticleFragment = mArticleFragment.newInstance(article_id, image, title, author, date, content, like, save);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            // 意外退出时进行连接关闭保护
+            if (conn != null) {
+                conn.disconnect();
+            }
+        }
+    }
 
+    //保存点赞数
+    private void saveLikeNum(int num){
+        HttpURLConnection conn = null;
+        InputStream is = null;
+        try {
+            String path = "http://" + WebIP.IP + "/FDStoryServer/addLike";
+            path = path + "?articleID=" + getIntent().getStringExtra("article_id")+"&likeNum"+num;
+            conn = (HttpURLConnection) new URL(path).openConnection();
+            conn.setConnectTimeout(3000); // 设置超时时间
+            conn.setReadTimeout(3000);
+            conn.setDoInput(true);
+            conn.setRequestMethod("GET"); // 设置获取信息方式
+            conn.setRequestProperty("Charset", "UTF-8"); // 设置接收数据编码格式
+            if (conn.getResponseCode() == 200) {
+                EventBus.getDefault().post(new MyEvent(num, 1));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            // 意外退出时进行连接关闭保护
+            if (conn != null) {
+                conn.disconnect();
+            }
+        }
+    }
+
+    //保存收藏数
+    private void saveSaveNum(int num){
+        HttpURLConnection conn = null;
+        InputStream is = null;
+        try {
+            String path = "http://" + WebIP.IP + "/FDStoryServer/addSave";
+            path = path + "?articleID=" + getIntent().getStringExtra("article_id")+"?saveNum"+num;
+            conn = (HttpURLConnection) new URL(path).openConnection();
+            conn.setConnectTimeout(3000); // 设置超时时间
+            conn.setReadTimeout(3000);
+            conn.setDoInput(true);
+            conn.setRequestMethod("GET"); // 设置获取信息方式
+            conn.setRequestProperty("Charset", "UTF-8"); // 设置接收数据编码格式
+            if (conn.getResponseCode() == 200) {
+                EventBus.getDefault().post(new MyEvent(num, 2));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            // 意外退出时进行连接关闭保护
+            if (conn != null) {
+                conn.disconnect();
+            }
+        }
+    }
 }

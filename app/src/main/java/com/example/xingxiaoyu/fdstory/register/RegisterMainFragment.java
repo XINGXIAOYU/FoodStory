@@ -23,7 +23,8 @@ import android.widget.Toast;
 
 import com.example.xingxiaoyu.fdstory.MainActivity;
 import com.example.xingxiaoyu.fdstory.R;
-import com.example.xingxiaoyu.fdstory.WebIP;
+import com.example.xingxiaoyu.fdstory.util.ParseInput;
+import com.example.xingxiaoyu.fdstory.util.WebIP;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -210,23 +211,20 @@ public class RegisterMainFragment extends Fragment {
 
         @Override
         protected Boolean doInBackground(Void... params) {
-            Log.i("Register","time out");
             HttpURLConnection conn = null;
             InputStream is = null;
             try {
-                String path = "http://10.0.2.2:8080/FDStoryServer/register";
+                String path = "http://" + WebIP.IP + "/FDStoryServer/userRegister";
                 path = path + "?userEmail=" + mEmail + "&userPassword=" + mPassword + "&userName=" + mName;
                 conn = (HttpURLConnection) new URL(path).openConnection();
-                conn.setConnectTimeout(5000); // 设置超时时间
-                conn.setReadTimeout(5000);
+                conn.setConnectTimeout(3000); // 设置超时时间
+                conn.setReadTimeout(3000);
                 conn.setDoInput(true);
                 conn.setRequestMethod("GET"); // 设置获取信息方式
                 conn.setRequestProperty("Charset", "UTF-8"); // 设置接收数据编码格式
-                conn.connect();
                 if (conn.getResponseCode() == 200) {
-                    Log.i("LoginWeb", "NO2. " + mEmail + " " + mPassword);
                     is = conn.getInputStream();
-                    String responseData = parseInfo(is);
+                    String responseData = ParseInput.parseInfo(is);
                     //转换成json数据处理
                     JSONArray jsonArray = new JSONArray(responseData);
                     for (int i = 0; i < jsonArray.length(); i++) {       //一个循环代表一个对象
@@ -243,64 +241,13 @@ public class RegisterMainFragment extends Fragment {
                 }
             }
             return false;
-
-           /* // TODO: attempt authentication against a network service.
-            final  String SERVICE_NS = "http://tempuri.org/"; //Webservice所在命名空间
-            final  String SERVICE_URL = "http://192.168.1.213:9006/WS_Base.asmx";//Webservice服务地址
-            final  String methodName = "AuthenticateRegister";//要使用的接口函数final 注册账号
-            final String methodName2 = "Register";//注册
-            HttpTransportSE ht; //该对象用于调用WebService操作
-            SoapSerializationEnvelope envelope;//上一个类信息的载体
-            SoapObject soapObject; //将参数传递给WebService
-            ht = new HttpTransportSE(SERVICE_URL);
-            ht.debug = true;
-            envelope = new SoapSerializationEnvelope(SoapEnvelope.VER11);
-            soapObject = new SoapObject(SERVICE_NS,methodName);
-            soapObject.addProperty("userName",params[0]);
-            soapObject.addProperty("userEmail",params[1]);
-            soapObject.addProperty("password",params[2]);
-            envelope.bodyOut = soapObject;
-            envelope.dotNet = true;
-            try{
-                //调用远程web service 注册账号
-                ht.call(SERVICE_NS+methodName,envelope);
-                if(envelope.getResponse()!=null) {
-                    SoapObject result = (SoapObject) envelope.bodyIn;
-                    Object details1 = (Object) result.equals("true");
-                    return details1.toString().equals("true");
-                }
-            }catch (IOException e){
-                e.printStackTrace();
-            }catch (XmlPullParserException e){
-                e.printStackTrace();
-            }
-            return false;*/
         }
 
-        // 将输入流转化为 String 型
-        private String parseInfo(InputStream inStream) throws Exception {
-            byte[] data = read(inStream);
-            // 转化为字符串
-            return new String(data, "UTF-8");
-        }
-
-        // 将输入流转化为byte型
-        public byte[] read(InputStream inStream) throws Exception {
-            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-            byte[] buffer = new byte[1024];
-            int len = 0;
-            while ((len = inStream.read(buffer)) != -1) {
-                outputStream.write(buffer, 0, len);
-            }
-            inStream.close();
-            return outputStream.toByteArray();
-        }
 
         @Override
         protected void onPostExecute(final Boolean success) {
             mAuthTask = null;
             showProgress(false);
-
             if (success) {
                 Intent intent = new Intent(registerActivity, MainActivity.class);
                 intent.putExtra("user_name", name);

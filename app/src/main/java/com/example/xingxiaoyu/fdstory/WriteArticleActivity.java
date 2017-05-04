@@ -3,10 +3,13 @@ package com.example.xingxiaoyu.fdstory;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
+import android.media.Image;
 import android.os.Bundle;
 import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.text.TextUtils;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -42,7 +45,7 @@ public class WriteArticleActivity extends AppCompatActivity implements OnMenuIte
     TextView mToolBarTextView;
     private ContextMenuDialogFragment mMenuDialogFragment;
     private String TAG = WriteArticleActivity.class.getSimpleName();
-    FragmentManager fm = getSupportFragmentManager();;
+    FragmentManager fm = getSupportFragmentManager();
     @Bind(R.id.article_title)
     TextView articleTitle;
     @Bind(R.id.article_content)
@@ -51,6 +54,10 @@ public class WriteArticleActivity extends AppCompatActivity implements OnMenuIte
     ImageView articleImage;
     @Bind(R.id.insert_location)
     ImageView insertLocation;
+    String title;
+    String content;
+    Drawable image;
+    String location;
 
 
     @Override
@@ -74,7 +81,6 @@ public class WriteArticleActivity extends AppCompatActivity implements OnMenuIte
             }
         });
     }
-
 
 
     private void initToolbar() {
@@ -119,11 +125,11 @@ public class WriteArticleActivity extends AppCompatActivity implements OnMenuIte
         close.setResource(R.drawable.icn_close);
         MenuObject comment = new MenuObject("发送");
         comment.setResource(R.drawable.icn_5);
-        MenuObject like = new MenuObject("保存");
-        like.setResource(R.drawable.icn_3);
+//        MenuObject like = new MenuObject("保存");
+//        like.setResource(R.drawable.icn_3);
         menuObjects.add(close);
         menuObjects.add(comment);
-        menuObjects.add(like);
+//        menuObjects.add(like);
         return menuObjects;
     }
 
@@ -150,24 +156,29 @@ public class WriteArticleActivity extends AppCompatActivity implements OnMenuIte
     public void onMenuItemClick(View clickedView, int position) {
         switch (position) {
             case 1:
-                //发送
-                /*
-                saveArticle()
-                 */
-                Toast.makeText(this, "成功发表，进入审核", Toast.LENGTH_SHORT).show();
-                finish();
-                break;
-            case 2:
-                //保存草稿
-                /*
-                saveArticle()
-                 */
-                Toast.makeText(this, "存入草稿箱", Toast.LENGTH_SHORT).show();
+//                title = articleTitle.getText().toString();
+//                content = articleContent.getText().toString();
+//                image = articleImage.getDrawable();
+//                location =
+//                //发送
+//                /*
+//                saveArticle()
+//                 */
+//                Toast.makeText(this, "成功发表，进入审核", Toast.LENGTH_SHORT).show();
                 finish();
                 break;
         }
 
     }
+
+//    private void saveArticle(){
+//        if(!TextUtils.isEmpty(articleTitle.getText())&&
+//                !TextUtils.isEmpty(articleContent.getText())&&
+//                articleImage.getResources()!=null&&
+//                ){
+//
+//        }
+//    }
 
 
     @Override
@@ -228,13 +239,15 @@ public class WriteArticleActivity extends AppCompatActivity implements OnMenuIte
 
         public void photo() {
             //拍照功能
+            //TODO
         }
 
-        public void album(){
+        public void album() {
             //相册功能
 //            String url = "/Users/xingxiaoyu/Documents/FDStory/app/src/main/res/drawable/wel_pic.png";
 //            EventBus.getDefault().post(new PhotoEvent(url));
             articleImage.setImageResource(R.drawable.wel_pic);
+            //TODO
         }
     }
 

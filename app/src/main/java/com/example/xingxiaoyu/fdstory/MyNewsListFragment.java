@@ -15,7 +15,16 @@ import com.baoyz.swipemenulistview.SwipeMenuCreator;
 import com.baoyz.swipemenulistview.SwipeMenuItem;
 import com.baoyz.swipemenulistview.SwipeMenuListView;
 import com.example.xingxiaoyu.fdstory.entity.Comment;
+import com.example.xingxiaoyu.fdstory.entity.UserInfo;
+import com.example.xingxiaoyu.fdstory.util.ParseInput;
+import com.example.xingxiaoyu.fdstory.util.WebIP;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -64,16 +73,42 @@ public class MyNewsListFragment extends Fragment {
 
     private void initData() {
         mCommentList = new ArrayList<>();//从数据库读取
-        Comment comment = null;
-        for (int i = 0; i < 15; i++) {
-            if (i % 2 == 0) {
-                comment = new Comment(i + "", "张三" + i, "http://d.hiphotos.baidu.com/image/h%3D360/sign=856d60650933874483c5297a610fd937/55e736d12f2eb938e81944c7d0628535e5dd6f8a.jpg", "今天真开心，敲了一天代码。", "2015-03-04 23:02:06");
+        HttpURLConnection conn = null;
+        InputStream is = null;
+        try {
+            String path = "http://" + WebIP.IP + "/FDStoryServer/getMyCommentInfo";
+            path = path + "?userEmail=" + UserInfo.email;
+            conn = (HttpURLConnection) new URL(path).openConnection();
+            conn.setConnectTimeout(3000); // 设置超时时间
+            conn.setReadTimeout(3000);
+            conn.setDoInput(true);
+            conn.setRequestMethod("GET"); // 设置获取信息方式
+            conn.setRequestProperty("Charset", "UTF-8"); // 设置接收数据编码格式
+            if (conn.getResponseCode() == 200) {
+                is = conn.getInputStream();
+                String responseData = ParseInput.parseInfo(is);
+                //转换成json数据处理
+                JSONArray jsonArray = new JSONArray(responseData);
+                for (int i = 0; i < jsonArray.length(); i++) {       //一个循环代表一个对象
+                    JSONObject jsonObject = jsonArray.getJSONObject(i);
+                    int id = jsonObject.getInt("myCommentID");
+                    String commenter = jsonObject.getString("myCommenter");
+                    String image = jsonObject.getString("myCommenterImage");
+                    String content = jsonObject.getString("myCommentContent");
+                    String date = jsonObject.getString("myCommentDate");
+                    mCommentList.add(new Comment(id, commenter, image, content, date));
+
+                }
             }
-            if (i % 2 == 1) {
-                comment = new Comment(i + "", "张三" + i, "http://g.hiphotos.baidu.com/image/h%3D360/sign=c7fd97e3bc0e7bec3cda05e71f2cb9fa/960a304e251f95ca2f34115acd177f3e6609521d.jpg", "今天真开心，敲了一天代码。", "2015-03-04 23:02:06");
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            // 意外退出时进行连接关闭保护
+            if (conn != null) {
+                conn.disconnect();
             }
-            mCommentList.add(comment);
         }
+
         // step 1. create a MenuCreator
         SwipeMenuCreator creator = new SwipeMenuCreator() {
             @Override
@@ -100,20 +135,43 @@ public class MyNewsListFragment extends Fragment {
         newsList.setOnMenuItemClickListener(new SwipeMenuListView.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(int position, SwipeMenu menu, int index) {
-                Comment item = mCommentList.get(position);
                 switch (index) {
                     case 0:
                         // delete
-//					delete(item);
-                        mCommentList.remove(position);
-                        mBaseAdapter.notifyDataSetChanged();
-                        //更新数据库
+                        deleteItem(position);
                         break;
                 }
                 return false;
             }
         });
     }
+
+    private void deleteItem(int position) {
+        HttpURLConnection conn = null;
+        InputStream is = null;
+        try {
+            String path = "http://" + WebIP.IP + "/FDStoryServer/deleteMyCommentItem";
+            path = path + "?myCommentID=" + mCommentList.get(position).getId();
+            conn = (HttpURLConnection) new URL(path).openConnection();
+            conn.setConnectTimeout(3000); // 设置超时时间
+            conn.setReadTimeout(3000);
+            conn.setDoInput(true);
+            conn.setRequestMethod("GET"); // 设置获取信息方式
+            conn.setRequestProperty("Charset", "UTF-8"); // 设置接收数据编码格式
+            if (conn.getResponseCode() == 200) {
+                mCommentList.remove(position);
+                mBaseAdapter.notifyDataSetChanged();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            // 意外退出时进行连接关闭保护
+            if (conn != null) {
+                conn.disconnect();
+            }
+        }
+    }
+
 
     private int dp2px(int dp) {
         return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp,
