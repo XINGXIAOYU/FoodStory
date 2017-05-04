@@ -5,18 +5,21 @@ public class Comment {
     private String nickName;
     private String imgUrl;
     private String content;
-    private String time;
-
 
     public Comment() {
     }
 
-    public Comment(int id, String nickName, String imgUrl, String content, String time) {
+    public Comment(int id, String nickName, String imgUrl, String content) {
         this.id = id;
         this.nickName = nickName;
         this.imgUrl = imgUrl;
         this.content = content;
-        this.time = time;
+    }
+
+    public Comment(String nickName, String imgUrl, String content) {
+        this.nickName = nickName;
+        this.imgUrl = imgUrl;
+        this.content = content;
     }
 
 
@@ -53,14 +56,6 @@ public class Comment {
         this.content = content;
     }
 
-    public String getTime() {
-        return time;
-    }
-
-    public void setTime(String time) {
-        this.time = time;
-    }
-
 
     @Override
     public String toString() {
@@ -69,7 +64,6 @@ public class Comment {
                 ", nickName='" + nickName + '\'' +
                 ", imgUrl='" + imgUrl + '\'' +
                 ", content='" + content + '\'' +
-                ", time='" + time + '\'' +
                 '}';
     }
 }

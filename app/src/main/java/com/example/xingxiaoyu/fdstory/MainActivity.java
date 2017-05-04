@@ -59,8 +59,8 @@ public class MainActivity extends AppCompatActivity implements BottomNavigationB
             mMapFragment = MapFragment.newInstance();
             addFragment(mMapFragment,true,R.id.tb);
         } else {
-            nightPageFragment = ArticleFragment.newInstance("文章名字", "http://farm8.staticflickr.com/7232/6913504132_a0fce67a0e_c.jpg");
-            addFragment(nightPageFragment,true,R.id.tb);
+//            nightPageFragment = ArticleFragment.newInstance("文章名字", "http://farm8.staticflickr.com/7232/6913504132_a0fce67a0e_c.jpg");
+//            addFragment(nightPageFragment,true,R.id.tb);
         }
         mShareFragment = ShareFragment.newInstance();
         mMySelfFragment = MyselfFragment.newInstance();
@@ -109,16 +109,17 @@ public class MainActivity extends AppCompatActivity implements BottomNavigationB
                 if (isDay()&&mMapFragment == null) {
                     mMapFragment = mMapFragment.newInstance();
                     transaction.replace(R.id.tb, mMapFragment);
-                } else if(isDay()){
+                } else if(isDay()) {
                     transaction.show(mMapFragment);
                     transaction.replace(R.id.tb, mMapFragment);
-                }else if(!isDay()&&nightPageFragment == null){
-                    nightPageFragment = ArticleFragment.newInstance("文章名字", "http://farm8.staticflickr.com/7232/6913504132_a0fce67a0e_c.jpg");
-                    transaction.replace(R.id.tb, nightPageFragment);
-                }else if(!isDay()){
-                    transaction.show(nightPageFragment);
-                    transaction.replace(R.id.tb, nightPageFragment);
                 }
+//                }else if(!isDay()&&nightPageFragment == null){
+//                    nightPageFragment = ArticleFragment.newInstance("文章名字", "http://farm8.staticflickr.com/7232/6913504132_a0fce67a0e_c.jpg");
+//                    transaction.replace(R.id.tb, nightPageFragment);
+//                }else if(!isDay()){
+//                    transaction.show(nightPageFragment);
+//                    transaction.replace(R.id.tb, nightPageFragment);
+//                }
                 mToolBarTextView.setText("首页");
                 break;
             case 1:

@@ -62,7 +62,7 @@ public class CommentAdapter extends BaseAdapter {
         Comment comment = mCommentList.get(position);
         viewHolder.mIamTvReply.setText(comment.getNickName());
         viewHolder.mIamTvContent.setText(comment.getContent());
-        viewHolder.mIamTvTime.setText(comment.getTime());
+//        viewHolder.mIamTvTime.setText(comment.getTime());
 
         viewHolder.mIamSdvImg.setImageURI(Uri.parse(comment.getImgUrl()));
         return convertView;

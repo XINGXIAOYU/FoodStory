@@ -7,6 +7,7 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
@@ -64,7 +65,7 @@ public class MapFragment extends Fragment implements SensorEventListener {
     BitmapDescriptor bd = BitmapDescriptorFactory
             .fromResource(R.drawable.icon_gcoding);
     List<MarkerInfo> markerInfos = new ArrayList<MarkerInfo>();
-
+    private ReadInfoTask task;
     //定位相关
     LocationClient mLocClient;
     public MyLocationListenner myListener = new MyLocationListenner();
@@ -119,7 +120,8 @@ public class MapFragment extends Fragment implements SensorEventListener {
 //        markerInfos.add(new MarkerInfo(1, 31.2455045690, 121.5064839346, "http://farm8.staticflickr.com/7232/6913504132_a0fce67a0e_c.jpg", "蛋糕1", "2010/5/10"));
 //        markerInfos.add(new MarkerInfo(2, 28.2455045690, 121.5064839346, "http://farm5.staticflickr.com/4074/4789681330_2e30dfcacb_b.jpg", "蛋糕2", "2010/6/10"));
         //从数据库获取markerInfos的信息
-        readInfos();
+        task = new ReadInfoTask();
+        task.execute((Void) null);
         addInfoOverLay(markerInfos);
         initMarkClick();
         requestLocButton.setOnClickListener(new View.OnClickListener() {
@@ -131,45 +133,47 @@ public class MapFragment extends Fragment implements SensorEventListener {
         return view;
     }
 
-    public void readInfos(){
+    public class ReadInfoTask extends AsyncTask<Void, Void, Boolean> {
         HttpURLConnection conn = null;
         InputStream is = null;
-        try {
-            String path = "http://" + WebIP.IP + "/FDStoryServer/getMarkerInfo";
-            conn = (HttpURLConnection) new URL(path).openConnection();
-            conn.setConnectTimeout(3000); // 设置超时时间
-            conn.setReadTimeout(3000);
-            conn.setDoInput(true);
-            conn.setRequestMethod("GET"); // 设置获取信息方式
-            conn.setRequestProperty("Charset", "UTF-8"); // 设置接收数据编码格式
-            if (conn.getResponseCode() == 200) {
-                is = conn.getInputStream();
-                String responseData = ParseInput.parseInfo(is);
-                //转换成json数据处理
-                JSONArray jsonArray = new JSONArray(responseData);
-                for (int i = 0; i < jsonArray.length(); i++) {       //一个循环代表一个对象
-                    JSONObject jsonObject = jsonArray.getJSONObject(i);
-                    int id = jsonObject.getInt("markerID");
-                    double latitude = jsonObject.getDouble("markerLatitude");
-                    double longitude = jsonObject.getDouble("markerLongitude");
-                    String image = jsonObject.getString("markerImage");
-                    String title = jsonObject.getString("markerTitle");
-                    String date = jsonObject.getString("markerDate");
-                    markerInfos.add(new MarkerInfo(id,latitude,longitude,image,title,date));
+        @Override
+        protected Boolean doInBackground(Void... params) {
+            try {
+                String path = "http://" + WebIP.IP + "/FDStoryServer/getMarkerInfo";
+                conn = (HttpURLConnection) new URL(path).openConnection();
+                conn.setConnectTimeout(3000); // 设置超时时间
+                conn.setReadTimeout(3000);
+                conn.setDoInput(true);
+                conn.setRequestMethod("GET"); // 设置获取信息方式
+                conn.setRequestProperty("Charset", "UTF-8"); // 设置接收数据编码格式
+                if (conn.getResponseCode() == 200) {
+                    is = conn.getInputStream();
+                    String responseData = ParseInput.parseInfo(is);
+                    //转换成json数据处理
+                    JSONArray jsonArray = new JSONArray(responseData);
+                    for (int i = 0; i < jsonArray.length(); i++) {       //一个循环代表一个对象
+                        JSONObject jsonObject = jsonArray.getJSONObject(i);
+                        int id = jsonObject.getInt("markerID");
+                        double latitude = jsonObject.getDouble("markerLatitude");
+                        double longitude = jsonObject.getDouble("markerLongitude");
+                        String image = jsonObject.getString("markerImage");
+                        String title = jsonObject.getString("markerTitle");
+                        String date = jsonObject.getString("markerDate");
+                        markerInfos.add(new MarkerInfo(id,latitude,longitude,image,title,date));
 
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                // 意外退出时进行连接关闭保护
+                if (conn != null) {
+                    conn.disconnect();
                 }
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            // 意外退出时进行连接关闭保护
-            if (conn != null) {
-                conn.disconnect();
-            }
+            return null;
         }
     }
-
-
     public void addInfoOverLay(List<MarkerInfo> infos) {
         mBaiduMap.clear();
         LatLng latLng = null;

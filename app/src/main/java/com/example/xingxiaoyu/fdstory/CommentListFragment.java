@@ -115,7 +115,7 @@ public class CommentListFragment extends Fragment {
                     String image = jsonObject.getString("commenterImage");
                     String content = jsonObject.getString("commentContent");
                     String date = jsonObject.getString("commentDate");
-                    mCommentList.add(new Comment(id, commenter, image, content, date));
+//                    mCommentList.add(new Comment(id, commenter, image, content, date));
 
                 }
             }
@@ -154,7 +154,7 @@ public class CommentListFragment extends Fragment {
     private void saveComment() {
         if (!TextUtils.isEmpty(message.getText())) {
             info = message.getText().toString();
-            Comment comment = new Comment(getNextCommentID(), UserInfo.name, UserInfo.image, info, getCurrentTime());
+            Comment comment = new Comment(UserInfo.name, UserInfo.image, info);
             HttpURLConnection conn = null;
             InputStream is = null;
             try {
@@ -164,9 +164,9 @@ public class CommentListFragment extends Fragment {
                 conn.setReadTimeout(3000);
                 conn.setDoInput(true);
                 conn.setRequestMethod("POST"); // 设置获取信息方式
-                String data = "commentID" + comment.getId() + "&commenter" + comment.getNickName()
+                String data = "commenter" + comment.getNickName()
                         + "&image" + comment.getImgUrl() + "&content" + comment.getContent()
-                        + "&time" + comment.getTime() + "&articleID" + getArguments().getInt("article_id");
+                        + "&articleID" + getArguments().getInt("article_id");
                 conn.setRequestProperty("Charset", "UTF-8"); // 设置接收数据编码格式
                 conn.setRequestProperty("Content-Length", data.length() + "");
                 conn.setDoOutput(true);

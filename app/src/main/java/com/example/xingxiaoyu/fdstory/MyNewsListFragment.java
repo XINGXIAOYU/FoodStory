@@ -96,7 +96,7 @@ public class MyNewsListFragment extends Fragment {
                     String image = jsonObject.getString("myCommenterImage");
                     String content = jsonObject.getString("myCommentContent");
                     String date = jsonObject.getString("myCommentDate");
-                    mCommentList.add(new Comment(id, commenter, image, content, date));
+//                    mCommentList.add(new Comment(id, commenter, image, content, date));
 
                 }
             }
