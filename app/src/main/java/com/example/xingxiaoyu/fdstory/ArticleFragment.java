@@ -36,8 +36,8 @@ public class ArticleFragment extends Fragment {
     TextView likeNumView;
     @Bind(R.id.comment_num)
     TextView commentNumView;
-    int likeNum = 9;
-    int commentNum = 9;
+    int likeNum;
+    int commentNum;
 
     public static ArticleFragment newInstance(int id, String image, String title, String author, String date, String content, int like, int save) {
         ArticleFragment fragment = new ArticleFragment();

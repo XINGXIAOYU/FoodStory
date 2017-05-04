@@ -2,6 +2,7 @@ package com.example.xingxiaoyu.fdstory;
 
 
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
@@ -37,39 +38,7 @@ public class ShareFragment extends Fragment {
     @Bind(R.id.write)
     FloatingActionButton write;
     List<ShareInfo> shareInfoList = new ArrayList<>();
-
-    public void initData() {
-        HttpURLConnection conn = null;
-        InputStream is = null;
-        try {
-            String path = "http://" + WebIP.IP + "/FDStoryServer/getShareListInfo";
-            conn = (HttpURLConnection) new URL(path).openConnection();
-            conn.setConnectTimeout(3000); // 设置超时时间
-            conn.setReadTimeout(3000);
-            conn.setDoInput(true);
-            conn.setRequestProperty("Charset", "UTF-8"); // 设置接收数据编码格式
-            if (conn.getResponseCode() == 200) {
-                is = conn.getInputStream();
-                String responseData = ParseInput.parseInfo(is);
-                //转换成json数据处理
-                JSONArray jsonArray = new JSONArray(responseData);
-                for (int i = 0; i < jsonArray.length(); i++) {       //一个循环代表一个对象
-                    JSONObject jsonObject = jsonArray.getJSONObject(i);
-                    int id = jsonObject.getInt("shareID");
-                    String image = jsonObject.getString("shareImage");
-                    shareInfoList.add(new ShareInfo(id, image));
-
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            // 意外退出时进行连接关闭保护
-            if (conn != null) {
-                conn.disconnect();
-            }
-        }
-    }
+    ReadInfoTask task;
 
 //    private String urls[] = {
 //            "http://farm8.staticflickr.com/7232/6913504132_a0fce67a0e_c.jpg",
@@ -119,29 +88,12 @@ public class ShareFragment extends Fragment {
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_share, container, false);
         ButterKnife.bind(this, view);
+        task = new ReadInfoTask();
+        task.execute((Void) null);
         gridView = (StaggeredGridView) view.findViewById(R.id.staggeredGridView_sharelist);
         int margin = getResources().getDimensionPixelSize(R.dimen.margin);
         gridView.setItemMargin(margin); // set the GridView margin
         gridView.setPadding(margin, 0, margin, 0); // have the margin on the sides as well
-        String[] urls = new String[shareInfoList.size()];
-        for (int i = 0; i < urls.length; i++) {
-            urls[i] = shareInfoList.get(i).getImage();
-        }
-        StaggeredAdapter adapter = new StaggeredAdapter(this.getActivity(), R.id.imageView1, urls);
-        gridView.setAdapter(adapter);
-        gridView.setOnItemClickListener(new StaggeredGridView.OnItemClickListener() {
-            @Override
-            public void onItemClick(StaggeredGridView parent, View view, int position, long id) {
-                //TODO
-                int post = position;//位置
-                Toast.makeText(getActivity(), "点击了第" + post + "个", Toast.LENGTH_SHORT).show();
-                //显示这片文章的详细内容
-                Intent i = new Intent(getActivity(), ArticleActivity.class);
-                i.putExtra("article_id", shareInfoList.get(post).getId());
-                startActivity(i);
-            }
-        });
-        adapter.notifyDataSetChanged();//update
         write.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -150,6 +102,67 @@ public class ShareFragment extends Fragment {
             }
         });
         return view;
+    }
+
+    public class ReadInfoTask extends AsyncTask<Void, Void, Boolean> {
+        HttpURLConnection conn = null;
+        InputStream is = null;
+
+        @Override
+        protected Boolean doInBackground(Void... params) {
+            try {
+                String path = "http://" + WebIP.IP + "/FDStoryServer/getShareListInfo";
+                conn = (HttpURLConnection) new URL(path).openConnection();
+                conn.setConnectTimeout(3000); // 设置超时时间
+                conn.setReadTimeout(3000);
+                conn.setDoInput(true);
+                conn.setRequestProperty("Charset", "UTF-8"); // 设置接收数据编码格式
+                if (conn.getResponseCode() == 200) {
+                    is = conn.getInputStream();
+                    String responseData = ParseInput.parseInfo(is);
+                    //转换成json数据处理
+                    JSONArray jsonArray = new JSONArray(responseData);
+                    for (int i = 0; i < jsonArray.length(); i++) {       //一个循环代表一个对象
+                        JSONObject jsonObject = jsonArray.getJSONObject(i);
+                        int id = jsonObject.getInt("shareID");
+                        String image = jsonObject.getString("shareImage");
+                        shareInfoList.add(new ShareInfo(id, image));
+
+                    }
+                    return true;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                // 意外退出时进行连接关闭保护
+                if (conn != null) {
+                    conn.disconnect();
+                }
+            }
+            return false;
+        }
+
+        @Override
+        protected void onPostExecute(final Boolean success) {
+            String[] urls = new String[shareInfoList.size()];
+            for (int i = 0; i < urls.length; i++) {
+                urls[i] = shareInfoList.get(i).getImage();
+            }
+            StaggeredAdapter adapter = new StaggeredAdapter(getActivity(), R.id.imageView1, urls);
+            gridView.setAdapter(adapter);
+            gridView.setOnItemClickListener(new StaggeredGridView.OnItemClickListener() {
+                @Override
+                public void onItemClick(StaggeredGridView parent, View view, int position, long id) {
+                    int post = position;//位置
+                    Toast.makeText(getActivity(), "点击了第" + post + "个", Toast.LENGTH_SHORT).show();
+                    //显示这片文章的详细内容
+                    Intent i = new Intent(getActivity(), ArticleActivity.class);
+                    i.putExtra("article_id", shareInfoList.get(post).getId());
+                    startActivity(i);
+                }
+            });
+            adapter.notifyDataSetChanged();//update
+        }
     }
 
 

@@ -16,6 +16,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.baidu.location.BDLocation;
 import com.baidu.location.BDLocationListener;
@@ -122,8 +123,6 @@ public class MapFragment extends Fragment implements SensorEventListener {
         //从数据库获取markerInfos的信息
         task = new ReadInfoTask();
         task.execute((Void) null);
-        addInfoOverLay(markerInfos);
-        initMarkClick();
         requestLocButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -136,6 +135,7 @@ public class MapFragment extends Fragment implements SensorEventListener {
     public class ReadInfoTask extends AsyncTask<Void, Void, Boolean> {
         HttpURLConnection conn = null;
         InputStream is = null;
+
         @Override
         protected Boolean doInBackground(Void... params) {
             try {
@@ -159,9 +159,10 @@ public class MapFragment extends Fragment implements SensorEventListener {
                         String image = jsonObject.getString("markerImage");
                         String title = jsonObject.getString("markerTitle");
                         String date = jsonObject.getString("markerDate");
-                        markerInfos.add(new MarkerInfo(id,latitude,longitude,image,title,date));
+                        markerInfos.add(new MarkerInfo(id, latitude, longitude, image, title, date));
 
                     }
+                    return true;
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -171,9 +172,19 @@ public class MapFragment extends Fragment implements SensorEventListener {
                     conn.disconnect();
                 }
             }
-            return null;
+            return false;
+        }
+
+        @Override
+        protected void onPostExecute(final Boolean success) {
+            task = null;
+            if (success) {
+                addInfoOverLay(markerInfos);
+                initMarkClick();
+            }
         }
     }
+
     public void addInfoOverLay(List<MarkerInfo> infos) {
         mBaiduMap.clear();
         LatLng latLng = null;

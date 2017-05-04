@@ -2,6 +2,7 @@ package com.example.xingxiaoyu.fdstory;
 
 import android.content.Intent;
 import android.graphics.Color;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -43,6 +44,7 @@ public class ArticleActivity extends AppCompatActivity implements OnMenuItemClic
     private ArticleFragment mArticleFragment;
     private int article_id;
     FragmentManager fm;
+    ReadInfoTask task;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,8 +61,8 @@ public class ArticleActivity extends AppCompatActivity implements OnMenuItemClic
      */
     private void setDefaultFragment() {
         fm = getSupportFragmentManager();
-        getArticleInfo();
-        addFragment(mArticleFragment, true, R.id.container);
+        task = new ReadInfoTask();
+        task.execute((Void) null);
     }
 
     private void initMenuFragment() {
@@ -186,53 +188,68 @@ public class ArticleActivity extends AppCompatActivity implements OnMenuItemClic
     }
 
     //根据文章的ID获取相关信息
-    private void getArticleInfo() {
+    public class ReadInfoTask extends AsyncTask<Void, Void, Boolean> {
         HttpURLConnection conn = null;
         InputStream is = null;
-        try {
-            String path = "http://" + WebIP.IP + "/FDStoryServer/getArticleInfo";
-            path = path + "?articleID=" + getIntent().getStringExtra("article_id");
-            conn = (HttpURLConnection) new URL(path).openConnection();
-            conn.setConnectTimeout(3000); // 设置超时时间
-            conn.setReadTimeout(3000);
-            conn.setDoInput(true);
-            conn.setRequestMethod("GET"); // 设置获取信息方式
-            conn.setRequestProperty("Charset", "UTF-8"); // 设置接收数据编码格式
-            if (conn.getResponseCode() == 200) {
-                is = conn.getInputStream();
-                String responseData = ParseInput.parseInfo(is);
-                //转换成json数据处理
-                JSONArray jsonArray = new JSONArray(responseData);
-                for (int i = 0; i < jsonArray.length(); i++) {       //一个循环代表一个对象
-                    JSONObject jsonObject = jsonArray.getJSONObject(i);
-                    article_id = jsonObject.getInt("articleID");
-                    String image = jsonObject.getString("articleImage");
-                    String title = jsonObject.getString("articleTitle");
-                    String author = jsonObject.getString("articleAuthor");
-                    String date = jsonObject.getString("articleDate");
-                    String content = jsonObject.getString("articleContent");
-                    int like = jsonObject.getInt("likeNumber");
-                    int save = jsonObject.getInt("saveNumber");
-                    mArticleFragment = mArticleFragment.newInstance(article_id, image, title, author, date, content, like, save);
+
+        @Override
+        protected Boolean doInBackground(Void... params) {
+            try {
+                String path = "http://" + WebIP.IP + "/FDStoryServer/getArticleInfo";
+                path = path + "?articleID=" + getIntent().getStringExtra("article_id");
+                conn = (HttpURLConnection) new URL(path).openConnection();
+                conn.setConnectTimeout(3000); // 设置超时时间
+                conn.setReadTimeout(3000);
+                conn.setDoInput(true);
+                conn.setRequestMethod("GET"); // 设置获取信息方式
+                conn.setRequestProperty("Charset", "UTF-8"); // 设置接收数据编码格式
+                if (conn.getResponseCode() == 200) {
+                    is = conn.getInputStream();
+                    String responseData = ParseInput.parseInfo(is);
+                    //转换成json数据处理
+                    JSONArray jsonArray = new JSONArray(responseData);
+                    for (int i = 0; i < jsonArray.length(); i++) {       //一个循环代表一个对象
+                        JSONObject jsonObject = jsonArray.getJSONObject(i);
+                        article_id = jsonObject.getInt("articleID");
+                        String image = jsonObject.getString("articleImage");
+                        String title = jsonObject.getString("articleTitle");
+                        String author = jsonObject.getString("articleAuthor");
+                        String date = jsonObject.getString("articleDate");
+                        String content = jsonObject.getString("articleContent");
+                        int like = jsonObject.getInt("likeNumber");
+                        int save = jsonObject.getInt("saveNumber");
+                        mArticleFragment = mArticleFragment.newInstance(article_id, image, title, author, date, content, like, save);
+                    }
+                    return true;
+                }
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                // 意外退出时进行连接关闭保护
+                if (conn != null) {
+                    conn.disconnect();
                 }
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            // 意外退出时进行连接关闭保护
-            if (conn != null) {
-                conn.disconnect();
+            return false;
+        }
+
+        @Override
+        protected void onPostExecute(final Boolean success) {
+            task = null;
+            if (success) {
+                addFragment(mArticleFragment, true, R.id.container);
             }
         }
     }
 
     //保存点赞数
-    private void saveLikeNum(int num){
+    private void saveLikeNum(int num) {
         HttpURLConnection conn = null;
         InputStream is = null;
         try {
             String path = "http://" + WebIP.IP + "/FDStoryServer/addLike";
-            path = path + "?articleID=" + getIntent().getStringExtra("article_id")+"&likeNum"+num;
+            path = path + "?articleID=" + getIntent().getStringExtra("article_id") + "&likeNum" + num;
             conn = (HttpURLConnection) new URL(path).openConnection();
             conn.setConnectTimeout(3000); // 设置超时时间
             conn.setReadTimeout(3000);
@@ -253,12 +270,12 @@ public class ArticleActivity extends AppCompatActivity implements OnMenuItemClic
     }
 
     //保存收藏数
-    private void saveSaveNum(int num){
+    private void saveSaveNum(int num) {
         HttpURLConnection conn = null;
         InputStream is = null;
         try {
             String path = "http://" + WebIP.IP + "/FDStoryServer/addSave";
-            path = path + "?articleID=" + getIntent().getStringExtra("article_id")+"?saveNum"+num;
+            path = path + "?articleID=" + getIntent().getStringExtra("article_id") + "?saveNum" + num;
             conn = (HttpURLConnection) new URL(path).openConnection();
             conn.setConnectTimeout(3000); // 设置超时时间
             conn.setReadTimeout(3000);

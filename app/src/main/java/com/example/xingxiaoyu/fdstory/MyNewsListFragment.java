@@ -2,6 +2,7 @@ package com.example.xingxiaoyu.fdstory;
 
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.util.TypedValue;
@@ -41,9 +42,64 @@ public class MyNewsListFragment extends Fragment {
 
 
     //列表数据
-    List<Comment> mCommentList;
+    List<Comment> mCommentList = new ArrayList<>();
     //adapter
     BaseAdapter mBaseAdapter;
+
+    ReadInfoTask task;
+
+    //根据文章的ID获取相关信息
+    public class ReadInfoTask extends AsyncTask<Void, Void, Boolean> {
+        HttpURLConnection conn = null;
+        InputStream is = null;
+
+        @Override
+        protected Boolean doInBackground(Void... params) {
+            try {
+                String path = "http://" + WebIP.IP + "/FDStoryServer/getMyCommentInfo";
+                path = path + "?userEmail=" + UserInfo.email;
+                conn = (HttpURLConnection) new URL(path).openConnection();
+                conn.setConnectTimeout(3000); // 设置超时时间
+                conn.setReadTimeout(3000);
+                conn.setDoInput(true);
+                conn.setRequestMethod("GET"); // 设置获取信息方式
+                conn.setRequestProperty("Charset", "UTF-8"); // 设置接收数据编码格式
+                if (conn.getResponseCode() == 200) {
+                    is = conn.getInputStream();
+                    String responseData = ParseInput.parseInfo(is);
+                    //转换成json数据处理
+                    JSONArray jsonArray = new JSONArray(responseData);
+                    for (int i = 0; i < jsonArray.length(); i++) {       //一个循环代表一个对象
+                        JSONObject jsonObject = jsonArray.getJSONObject(i);
+                        int id = jsonObject.getInt("myCommentID");
+                        String commenter = jsonObject.getString("myCommenter");
+                        String image = jsonObject.getString("myCommenterImage");
+                        String content = jsonObject.getString("myCommentContent");
+                        String date = jsonObject.getString("myCommentDate");
+//                    mCommentList.add(new Comment(id, commenter, image, content, date));
+
+                    }
+                    return true;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                // 意外退出时进行连接关闭保护
+                if (conn != null) {
+                    conn.disconnect();
+                }
+            }
+            return false;
+        }
+
+        @Override
+        protected void onPostExecute(final Boolean success) {
+            task = null;
+            if (success) {
+//                addFragment(mArticleFragment, true, R.id.container);
+            }
+        }
+    }
 
     public static MyNewsListFragment newInstance() {
         //获取文章ID 获取评论
@@ -72,7 +128,7 @@ public class MyNewsListFragment extends Fragment {
     }
 
     private void initData() {
-        mCommentList = new ArrayList<>();//从数据库读取
+
         HttpURLConnection conn = null;
         InputStream is = null;
         try {
