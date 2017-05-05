@@ -15,6 +15,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
 
+import com.example.xingxiaoyu.fdstory.entity.UserInfo;
 import com.example.xingxiaoyu.fdstory.util.ParseInput;
 import com.example.xingxiaoyu.fdstory.util.WebIP;
 import com.yalantis.contextmenu.lib.ContextMenuDialogFragment;
@@ -38,13 +39,15 @@ import java.util.List;
  */
 
 public class ArticleActivity extends AppCompatActivity implements OnMenuItemClickListener, OnMenuItemLongClickListener {
-    Toolbar mToolbar;
+    private Toolbar mToolbar;
     private String TAG = ArticleActivity.class.getSimpleName();
     private ContextMenuDialogFragment mMenuDialogFragment;
     private ArticleFragment mArticleFragment;
     private int article_id;
-    FragmentManager fm;
-    ReadInfoTask task;
+    private FragmentManager fm;
+    private ReadInfoTask task;
+    private SaveLikeTask saveLikeTask;
+    private SaveSaveTask saveSaveTask;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -169,13 +172,15 @@ public class ArticleActivity extends AppCompatActivity implements OnMenuItemClic
                 //点赞
                 int num = mArticleFragment.getArguments().getInt("article_like");//从数据库获得点赞数
                 num++;
-                saveLikeNum(num);
+                saveLikeTask = new SaveLikeTask(num);
+                saveLikeTask.execute((Void) null);
                 break;
             case 3:
                 //收藏
                 int num2 = mArticleFragment.getArguments().getInt("article_save");//从数据库获得点赞数
                 num2++;
-                saveSaveNum(num2);
+                saveSaveTask = new SaveSaveTask((num2));
+                saveSaveTask.execute((Void) null);
                 break;
         }
         Toast.makeText(this, "Clicked on position: " + position, Toast.LENGTH_SHORT).show();
@@ -244,54 +249,87 @@ public class ArticleActivity extends AppCompatActivity implements OnMenuItemClic
     }
 
     //保存点赞数
-    private void saveLikeNum(int num) {
-        HttpURLConnection conn = null;
-        InputStream is = null;
-        try {
-            String path = "http://" + WebIP.IP + "/FDStoryServer/addLike";
-            path = path + "?articleID=" + getIntent().getStringExtra("article_id") + "&likeNum" + num;
-            conn = (HttpURLConnection) new URL(path).openConnection();
-            conn.setConnectTimeout(3000); // 设置超时时间
-            conn.setReadTimeout(3000);
-            conn.setDoInput(true);
-            conn.setRequestMethod("GET"); // 设置获取信息方式
-            conn.setRequestProperty("Charset", "UTF-8"); // 设置接收数据编码格式
-            if (conn.getResponseCode() == 200) {
-                EventBus.getDefault().post(new MyEvent(num, 1));
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            // 意外退出时进行连接关闭保护
-            if (conn != null) {
-                conn.disconnect();
-            }
+    public class SaveLikeTask extends AsyncTask<Void, Void, Boolean> {
+        int likeNum;
+
+        public SaveLikeTask(int likeNum) {
+            this.likeNum = likeNum;
         }
+
+        @Override
+        protected Boolean doInBackground(Void... params) {
+            HttpURLConnection conn = null;
+            InputStream is = null;
+            try {
+                String path = "http://" + WebIP.IP + "/FDStoryServer/addLike";
+                path = path + "?articleID=" + getIntent().getStringExtra("article_id") + "&likeNum" + likeNum;
+                conn = (HttpURLConnection) new URL(path).openConnection();
+                conn.setConnectTimeout(3000); // 设置超时时间
+                conn.setReadTimeout(3000);
+                conn.setDoInput(true);
+                conn.setRequestMethod("GET"); // 设置获取信息方式
+                conn.setRequestProperty("Charset", "UTF-8"); // 设置接收数据编码格式
+                if (conn.getResponseCode() == 200) {
+                    EventBus.getDefault().post(new MyEvent(likeNum, 1));
+                    return true;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                // 意外退出时进行连接关闭保护
+                if (conn != null) {
+                    conn.disconnect();
+                }
+            }
+            return false;
+        }
+
+        @Override
+        protected void onPostExecute(final Boolean success) {
+            saveLikeTask = null;
+        }
+
     }
 
     //保存收藏数
-    private void saveSaveNum(int num) {
-        HttpURLConnection conn = null;
-        InputStream is = null;
-        try {
-            String path = "http://" + WebIP.IP + "/FDStoryServer/addSave";
-            path = path + "?articleID=" + getIntent().getStringExtra("article_id") + "?saveNum" + num;
-            conn = (HttpURLConnection) new URL(path).openConnection();
-            conn.setConnectTimeout(3000); // 设置超时时间
-            conn.setReadTimeout(3000);
-            conn.setDoInput(true);
-            conn.setRequestMethod("GET"); // 设置获取信息方式
-            conn.setRequestProperty("Charset", "UTF-8"); // 设置接收数据编码格式
-            if (conn.getResponseCode() == 200) {
-                EventBus.getDefault().post(new MyEvent(num, 2));
+    public class SaveSaveTask extends AsyncTask<Void, Void, Boolean> {
+        int saveNum;
+
+        public SaveSaveTask(int saveNum) {
+            this.saveNum = saveNum;
+        }
+
+        @Override
+        protected Boolean doInBackground(Void... params) {
+            HttpURLConnection conn = null;
+            InputStream is = null;
+            try {
+                String path = "http://" + WebIP.IP + "/FDStoryServer/addSave";
+                path = path + "?articleID=" + getIntent().getStringExtra("article_id") + "?userEmail" + UserInfo.email;
+                conn = (HttpURLConnection) new URL(path).openConnection();
+                conn.setConnectTimeout(3000); // 设置超时时间
+                conn.setReadTimeout(3000);
+                conn.setDoInput(true);
+                conn.setRequestMethod("GET"); // 设置获取信息方式
+                conn.setRequestProperty("Charset", "UTF-8"); // 设置接收数据编码格式
+                if (conn.getResponseCode() == 200) {
+                    EventBus.getDefault().post(new MyEvent(saveNum, 2));
+                    return true;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                // 意外退出时进行连接关闭保护
+                if (conn != null) {
+                    conn.disconnect();
+                }
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            // 意外退出时进行连接关闭保护
-            if (conn != null) {
-                conn.disconnect();
-            }
+            return false;
+        }
+
+        @Override
+        protected void onPostExecute(final Boolean success) {
+            saveSaveTask = null;
         }
     }
 }

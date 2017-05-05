@@ -1,6 +1,7 @@
 package com.example.xingxiaoyu.fdstory;
 
 
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.app.Fragment;
@@ -54,12 +55,15 @@ public class CommentListFragment extends Fragment {
     @Bind(R.id.submit)
     Button submitButton;
 
+
     //列表数据
-    List<Comment> mCommentList = new ArrayList<Comment>();
+    private List<Comment> mCommentList = new ArrayList<Comment>();
     //回复的内容
-    String info = "";
+    private String info = "";
     //adapter
-    BaseAdapter mBaseAdapter;
+    private BaseAdapter mBaseAdapter;
+    private ReadInfoTask task;
+    private SaveCommentTask saveCommentTask;
 
     public static CommentListFragment newInstance(int param1) {
         //获取文章ID 获取评论
@@ -86,48 +90,11 @@ public class CommentListFragment extends Fragment {
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_comment_list, container, false);
         ButterKnife.bind(this, view);
-        initData();
-        initAdapter();
+        task = new ReadInfoTask();
+        task.execute((Void) null);
         return view;
     }
 
-    private void initData() {
-        HttpURLConnection conn = null;
-        InputStream is = null;
-        try {
-            String path = "http://" + WebIP.IP + "/FDStoryServer/getCommentInfo";
-            path = path + "?articleID=" + getArguments().getInt("article_id");
-            conn = (HttpURLConnection) new URL(path).openConnection();
-            conn.setConnectTimeout(3000); // 设置超时时间
-            conn.setReadTimeout(3000);
-            conn.setDoInput(true);
-            conn.setRequestMethod("GET"); // 设置获取信息方式
-            conn.setRequestProperty("Charset", "UTF-8"); // 设置接收数据编码格式
-            if (conn.getResponseCode() == 200) {
-                is = conn.getInputStream();
-                String responseData = ParseInput.parseInfo(is);
-                //转换成json数据处理
-                JSONArray jsonArray = new JSONArray(responseData);
-                for (int i = 0; i < jsonArray.length(); i++) {       //一个循环代表一个对象
-                    JSONObject jsonObject = jsonArray.getJSONObject(i);
-                    int id = jsonObject.getInt("commentID");
-                    String commenter = jsonObject.getString("commenter");
-                    String image = jsonObject.getString("commenterImage");
-                    String content = jsonObject.getString("commentContent");
-                    String date = jsonObject.getString("commentDate");
-//                    mCommentList.add(new Comment(id, commenter, image, content, date));
-
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            // 意外退出时进行连接关闭保护
-            if (conn != null) {
-                conn.disconnect();
-            }
-        }
-    }
 
     private void initAdapter() {
         mBaseAdapter = new CommentAdapter(getActivity(), mCommentList);
@@ -146,36 +113,48 @@ public class CommentListFragment extends Fragment {
                 comment(false);
                 break;
             case R.id.submit:
-                saveComment();
+                if (!TextUtils.isEmpty(message.getText())) {
+                    info = message.getText().toString();
+                    saveCommentTask = new SaveCommentTask(info);
+                } else {
+                    Toast.makeText(getActivity(), "请输入内容", Toast.LENGTH_SHORT).show();
+                }
                 break;
         }
     }
 
-    private void saveComment() {
-        if (!TextUtils.isEmpty(message.getText())) {
-            info = message.getText().toString();
-            Comment comment = new Comment(UserInfo.name, UserInfo.image, info);
-            HttpURLConnection conn = null;
-            InputStream is = null;
+    //根据文章的ID获取评论相关信息
+    public class ReadInfoTask extends AsyncTask<Void, Void, Boolean> {
+        HttpURLConnection conn = null;
+        InputStream is = null;
+
+        @Override
+        protected Boolean doInBackground(Void... params) {
             try {
-                String path = "http://" + WebIP.IP + "/FDStoryServer/saveComment";
+                String path = "http://" + WebIP.IP + "/FDStoryServer/getCommentInfo";
+                path = path + "?articleID=" + getArguments().getInt("article_id");
                 conn = (HttpURLConnection) new URL(path).openConnection();
                 conn.setConnectTimeout(3000); // 设置超时时间
                 conn.setReadTimeout(3000);
                 conn.setDoInput(true);
-                conn.setRequestMethod("POST"); // 设置获取信息方式
-                String data = "commenter" + comment.getNickName()
-                        + "&image" + comment.getImgUrl() + "&content" + comment.getContent()
-                        + "&articleID" + getArguments().getInt("article_id");
+                conn.setRequestMethod("GET"); // 设置获取信息方式
                 conn.setRequestProperty("Charset", "UTF-8"); // 设置接收数据编码格式
-                conn.setRequestProperty("Content-Length", data.length() + "");
-                conn.setDoOutput(true);
-                OutputStream outputStream = conn.getOutputStream();
-                outputStream.write(data.getBytes());
-                outputStream.flush();
-                outputStream.close();
                 if (conn.getResponseCode() == 200) {
-                    updateComment(comment);
+                    is = conn.getInputStream();
+                    String responseData = ParseInput.parseInfo(is);
+                    //转换成json数据处理
+                    JSONArray jsonArray = new JSONArray(responseData);
+                    for (int i = 0; i < jsonArray.length(); i++) {       //一个循环代表一个对象
+                        JSONObject jsonObject = jsonArray.getJSONObject(i);
+                        int id = jsonObject.getInt("commentID");
+                        String commenter = jsonObject.getString("commenter");
+                        String image = jsonObject.getString("commenterImage");
+                        String content = jsonObject.getString("commentContent");
+                        String date = jsonObject.getString("commentDate");
+                        mCommentList.add(new Comment(id, commenter, image, content, date));
+
+                    }
+                    return true;
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -185,86 +164,84 @@ public class CommentListFragment extends Fragment {
                     conn.disconnect();
                 }
             }
-        } else {
-            Toast.makeText(getActivity(), "请输入内容", Toast.LENGTH_SHORT).show();
+            return false;
+        }
+
+        @Override
+        protected void onPostExecute(final Boolean success) {
+            task = null;
+            if (success) {
+                initAdapter();
+            }
         }
     }
 
+    //保存评论
+    public class SaveCommentTask extends AsyncTask<Void, Void, Boolean> {
+        String info;
 
-    private void updateComment(Comment comment) {
-        mCommentList.add(0, comment);
-        mBaseAdapter.notifyDataSetChanged();
-        comment(false);
-    }
+        public SaveCommentTask(String info) {
+            this.info = info;
+        }
 
-    private int getNextCommentID() {
-        HttpURLConnection conn = null;
-        InputStream is = null;
-        try {
-            String path = "http://" + WebIP.IP + "/FDStoryServer/getNextCommentID";
-            conn = (HttpURLConnection) new URL(path).openConnection();
-            conn.setConnectTimeout(3000); // 设置超时时间
-            conn.setReadTimeout(3000);
-            conn.setDoInput(true);
-            conn.setRequestMethod("GET"); // 设置获取信息方式
-            conn.setRequestProperty("Charset", "UTF-8"); // 设置接收数据编码格式
-            if (conn.getResponseCode() == 200) {
-                is = conn.getInputStream();
-                String responseData = ParseInput.parseInfo(is);
-                //转换成json数据处理
-                JSONArray jsonArray = new JSONArray(responseData);
-                for (int i = 0; i < jsonArray.length(); i++) {       //一个循环代表一个对象
-                    JSONObject jsonObject = jsonArray.getJSONObject(i);
-                    int id = jsonObject.getInt("nextCommentID");
-                    return id;
-
+        @Override
+        protected Boolean doInBackground(Void... params) {
+            HttpURLConnection conn = null;
+            InputStream is = null;
+            try {
+                String path = "http://" + WebIP.IP + "/FDStoryServer/saveComment";
+                conn = (HttpURLConnection) new URL(path).openConnection();
+                conn.setConnectTimeout(3000); // 设置超时时间
+                conn.setReadTimeout(3000);
+                conn.setDoInput(true);
+                conn.setRequestMethod("POST"); // 设置获取信息方式
+                String data = "commenter" + UserInfo.email
+                        + "&content" + info
+                        + "&articleID" + getArguments().getInt("article_id");
+                conn.setRequestProperty("Charset", "UTF-8"); // 设置接收数据编码格式
+                conn.setRequestProperty("Content-Length", data.length() + "");
+                conn.setDoOutput(true);
+                OutputStream outputStream = conn.getOutputStream();
+                outputStream.write(data.getBytes());
+                outputStream.flush();
+                outputStream.close();
+                if (conn.getResponseCode() == 200) {
+                    is = conn.getInputStream();
+                    String responseData = ParseInput.parseInfo(is);
+                    //转换成json数据处理
+                    JSONArray jsonArray = new JSONArray(responseData);
+                    for (int i = 0; i < jsonArray.length(); i++) {       //一个循环代表一个对象
+                        JSONObject jsonObject = jsonArray.getJSONObject(i);
+                        int id = jsonObject.getInt("commentID");
+                        String commenter = jsonObject.getString("commenter");
+                        String image = jsonObject.getString("commenterImage");
+                        String content = jsonObject.getString("commentContent");
+                        String date = jsonObject.getString("commentDate");
+                        mCommentList.add(0, new Comment(id, commenter, image, content, date));
+                    }
+                    return true;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                // 意外退出时进行连接关闭保护
+                if (conn != null) {
+                    conn.disconnect();
                 }
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            // 意外退出时进行连接关闭保护
-            if (conn != null) {
-                conn.disconnect();
+            return false;
+
+        }
+
+        @Override
+        protected void onPostExecute(final Boolean success) {
+            saveCommentTask = null;
+            if (success) {
+                mBaseAdapter.notifyDataSetChanged();
+                comment(false);
             }
         }
-        return 0;
     }
-
-    private String getCurrentTime() {
-        HttpURLConnection conn = null;
-        InputStream is = null;
-        try {
-            String path = "http://" + WebIP.IP + "/FDStoryServer/getCurrentTime";
-            conn = (HttpURLConnection) new URL(path).openConnection();
-            conn.setConnectTimeout(3000); // 设置超时时间
-            conn.setReadTimeout(3000);
-            conn.setDoInput(true);
-            conn.setRequestMethod("GET"); // 设置获取信息方式
-            conn.setRequestProperty("Charset", "UTF-8"); // 设置接收数据编码格式
-            if (conn.getResponseCode() == 200) {
-                is = conn.getInputStream();
-                String responseData = ParseInput.parseInfo(is);
-                //转换成json数据处理
-                JSONArray jsonArray = new JSONArray(responseData);
-                for (int i = 0; i < jsonArray.length(); i++) {       //一个循环代表一个对象
-                    JSONObject jsonObject = jsonArray.getJSONObject(i);
-                    String time = jsonObject.getString("currentTime");
-                    return time;
-
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            // 意外退出时进行连接关闭保护
-            if (conn != null) {
-                conn.disconnect();
-            }
-        }
-        return null;
-    }
-
 
     private void comment(boolean flag) {
         if (!flag) {

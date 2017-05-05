@@ -42,64 +42,13 @@ public class MyNewsListFragment extends Fragment {
 
 
     //列表数据
-    List<Comment> mCommentList = new ArrayList<>();
+    private List<Comment> mCommentList = new ArrayList<>();
     //adapter
-    BaseAdapter mBaseAdapter;
+    private BaseAdapter mBaseAdapter;
 
-    ReadInfoTask task;
+    private ReadInfoTask task;
+    private DeleteItemTask deleteItemTask;
 
-    //根据文章的ID获取相关信息
-    public class ReadInfoTask extends AsyncTask<Void, Void, Boolean> {
-        HttpURLConnection conn = null;
-        InputStream is = null;
-
-        @Override
-        protected Boolean doInBackground(Void... params) {
-            try {
-                String path = "http://" + WebIP.IP + "/FDStoryServer/getMyCommentInfo";
-                path = path + "?userEmail=" + UserInfo.email;
-                conn = (HttpURLConnection) new URL(path).openConnection();
-                conn.setConnectTimeout(3000); // 设置超时时间
-                conn.setReadTimeout(3000);
-                conn.setDoInput(true);
-                conn.setRequestMethod("GET"); // 设置获取信息方式
-                conn.setRequestProperty("Charset", "UTF-8"); // 设置接收数据编码格式
-                if (conn.getResponseCode() == 200) {
-                    is = conn.getInputStream();
-                    String responseData = ParseInput.parseInfo(is);
-                    //转换成json数据处理
-                    JSONArray jsonArray = new JSONArray(responseData);
-                    for (int i = 0; i < jsonArray.length(); i++) {       //一个循环代表一个对象
-                        JSONObject jsonObject = jsonArray.getJSONObject(i);
-                        int id = jsonObject.getInt("myCommentID");
-                        String commenter = jsonObject.getString("myCommenter");
-                        String image = jsonObject.getString("myCommenterImage");
-                        String content = jsonObject.getString("myCommentContent");
-                        String date = jsonObject.getString("myCommentDate");
-//                    mCommentList.add(new Comment(id, commenter, image, content, date));
-
-                    }
-                    return true;
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            } finally {
-                // 意外退出时进行连接关闭保护
-                if (conn != null) {
-                    conn.disconnect();
-                }
-            }
-            return false;
-        }
-
-        @Override
-        protected void onPostExecute(final Boolean success) {
-            task = null;
-            if (success) {
-//                addFragment(mArticleFragment, true, R.id.container);
-            }
-        }
-    }
 
     public static MyNewsListFragment newInstance() {
         //获取文章ID 获取评论
@@ -122,49 +71,13 @@ public class MyNewsListFragment extends Fragment {
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_mycommentlist, container, false);
         ButterKnife.bind(this, view);
-        initData();
-        initAdapter();
+        setSwipe();
+        task = new ReadInfoTask();
+        task.execute((Void) null);
         return view;
     }
 
-    private void initData() {
-
-        HttpURLConnection conn = null;
-        InputStream is = null;
-        try {
-            String path = "http://" + WebIP.IP + "/FDStoryServer/getMyCommentInfo";
-            path = path + "?userEmail=" + UserInfo.email;
-            conn = (HttpURLConnection) new URL(path).openConnection();
-            conn.setConnectTimeout(3000); // 设置超时时间
-            conn.setReadTimeout(3000);
-            conn.setDoInput(true);
-            conn.setRequestMethod("GET"); // 设置获取信息方式
-            conn.setRequestProperty("Charset", "UTF-8"); // 设置接收数据编码格式
-            if (conn.getResponseCode() == 200) {
-                is = conn.getInputStream();
-                String responseData = ParseInput.parseInfo(is);
-                //转换成json数据处理
-                JSONArray jsonArray = new JSONArray(responseData);
-                for (int i = 0; i < jsonArray.length(); i++) {       //一个循环代表一个对象
-                    JSONObject jsonObject = jsonArray.getJSONObject(i);
-                    int id = jsonObject.getInt("myCommentID");
-                    String commenter = jsonObject.getString("myCommenter");
-                    String image = jsonObject.getString("myCommenterImage");
-                    String content = jsonObject.getString("myCommentContent");
-                    String date = jsonObject.getString("myCommentDate");
-//                    mCommentList.add(new Comment(id, commenter, image, content, date));
-
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            // 意外退出时进行连接关闭保护
-            if (conn != null) {
-                conn.disconnect();
-            }
-        }
-
+    private void setSwipe() {
         // step 1. create a MenuCreator
         SwipeMenuCreator creator = new SwipeMenuCreator() {
             @Override
@@ -194,7 +107,8 @@ public class MyNewsListFragment extends Fragment {
                 switch (index) {
                     case 0:
                         // delete
-                        deleteItem(position);
+                        deleteItemTask = new DeleteItemTask(position);
+                        deleteItemTask.execute((Void) null);
                         break;
                 }
                 return false;
@@ -202,32 +116,103 @@ public class MyNewsListFragment extends Fragment {
         });
     }
 
-    private void deleteItem(int position) {
-        HttpURLConnection conn = null;
-        InputStream is = null;
-        try {
-            String path = "http://" + WebIP.IP + "/FDStoryServer/deleteMyCommentItem";
-            path = path + "?myCommentID=" + mCommentList.get(position).getId();
-            conn = (HttpURLConnection) new URL(path).openConnection();
-            conn.setConnectTimeout(3000); // 设置超时时间
-            conn.setReadTimeout(3000);
-            conn.setDoInput(true);
-            conn.setRequestMethod("GET"); // 设置获取信息方式
-            conn.setRequestProperty("Charset", "UTF-8"); // 设置接收数据编码格式
-            if (conn.getResponseCode() == 200) {
-                mCommentList.remove(position);
-                mBaseAdapter.notifyDataSetChanged();
+    //根据文章的ID获取相关信息
+    public class ReadInfoTask extends AsyncTask<Void, Void, Boolean> {
+
+        @Override
+        protected Boolean doInBackground(Void... params) {
+            HttpURLConnection conn = null;
+            InputStream is = null;
+            try {
+                String path = "http://" + WebIP.IP + "/FDStoryServer/getMyCommentInfo";
+                path = path + "?userEmail=" + UserInfo.email;
+                conn = (HttpURLConnection) new URL(path).openConnection();
+                conn.setConnectTimeout(3000); // 设置超时时间
+                conn.setReadTimeout(3000);
+                conn.setDoInput(true);
+                conn.setRequestMethod("GET"); // 设置获取信息方式
+                conn.setRequestProperty("Charset", "UTF-8"); // 设置接收数据编码格式
+                if (conn.getResponseCode() == 200) {
+                    is = conn.getInputStream();
+                    String responseData = ParseInput.parseInfo(is);
+                    //转换成json数据处理
+                    JSONArray jsonArray = new JSONArray(responseData);
+                    for (int i = 0; i < jsonArray.length(); i++) {       //一个循环代表一个对象
+                        JSONObject jsonObject = jsonArray.getJSONObject(i);
+                        int id = jsonObject.getInt("myCommentID");
+                        String commenter = jsonObject.getString("myCommenter");
+                        String image = jsonObject.getString("myCommenterImage");
+                        String content = jsonObject.getString("myCommentContent");
+                        String date = jsonObject.getString("myCommentDate");
+                        mCommentList.add(new Comment(id, commenter, image, content, date));
+
+                    }
+                    return true;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                // 意外退出时进行连接关闭保护
+                if (conn != null) {
+                    conn.disconnect();
+                }
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            // 意外退出时进行连接关闭保护
-            if (conn != null) {
-                conn.disconnect();
+            return false;
+        }
+
+        @Override
+        protected void onPostExecute(final Boolean success) {
+            task = null;
+            if (success) {
+                initAdapter();
             }
         }
     }
 
+
+    public class DeleteItemTask extends AsyncTask<Void, Void, Boolean> {
+        int position;
+
+        public DeleteItemTask(int position) {
+            this.position = position;
+        }
+
+        @Override
+        protected Boolean doInBackground(Void... params) {
+            HttpURLConnection conn = null;
+            InputStream is = null;
+            try {
+                String path = "http://" + WebIP.IP + "/FDStoryServer/deleteMyCommentItem";
+                path = path + "?myCommentID=" + mCommentList.get(position).getId() + "&userEmail=" + UserInfo.email;
+                conn = (HttpURLConnection) new URL(path).openConnection();
+                conn.setConnectTimeout(3000); // 设置超时时间
+                conn.setReadTimeout(3000);
+                conn.setDoInput(true);
+                conn.setRequestMethod("GET"); // 设置获取信息方式
+                conn.setRequestProperty("Charset", "UTF-8"); // 设置接收数据编码格式
+                if (conn.getResponseCode() == 200) {
+                    return true;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                // 意外退出时进行连接关闭保护
+                if (conn != null) {
+                    conn.disconnect();
+                }
+            }
+            return false;
+        }
+
+        @Override
+        protected void onPostExecute(final Boolean success) {
+            deleteItemTask = null;
+            if (success) {
+                mCommentList.remove(position);
+                mBaseAdapter.notifyDataSetChanged();
+            }
+        }
+    }
 
     private int dp2px(int dp) {
         return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp,

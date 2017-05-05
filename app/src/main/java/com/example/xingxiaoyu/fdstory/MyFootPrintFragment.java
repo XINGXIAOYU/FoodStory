@@ -4,6 +4,7 @@ package com.example.xingxiaoyu.fdstory;
 import android.content.Intent;
 import android.graphics.Color;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
@@ -47,19 +48,17 @@ import butterknife.ButterKnife;
  */
 
 public class MyFootPrintFragment extends Fragment {
-    //    private String urls[] = {
-//            "http://farm8.staticflickr.com/7232/6913504132_a0fce67a0e_c.jpg",
-//            "http://farm8.staticflickr.com/7232/6913504132_a0fce67a0e_c.jpg",
-//    };
     @Bind(R.id.bmapView)
     MapView mMapView;
     @Bind(R.id.record)
     TextView mRecord;
     private View popView = null;//弹出框视图
     private BaiduMap mBaiduMap;
-    List<MarkerInfo> myMarkerInfos = new ArrayList<MarkerInfo>();
-    BitmapDescriptor bd = BitmapDescriptorFactory
+    private List<MarkerInfo> myMarkerInfos = new ArrayList<MarkerInfo>();
+    private BitmapDescriptor bd = BitmapDescriptorFactory
             .fromResource(R.drawable.icon_gcoding);
+    private ReadInfoTask task;
+
 
     public static MyFootPrintFragment newInstance() {
         MyFootPrintFragment fragment = new MyFootPrintFragment();
@@ -99,48 +98,62 @@ public class MyFootPrintFragment extends Fragment {
         MapStatusUpdate mMapStatusUpdate = MapStatusUpdateFactory.newMapStatus(mMapStatus);
         //改变地图状态
         mBaiduMap.setMapStatus(mMapStatusUpdate);
-        mRecord.setText("已在15个地方留下美食足迹");
-        readInfos();
-        addInfoOverLay(myMarkerInfos);
-        initMarkClick();
+        task = new ReadInfoTask();
+        task.execute((Void) null);
         return view;
     }
 
-    public void readInfos() {
+    public class ReadInfoTask extends AsyncTask<Void, Void, Boolean> {
         HttpURLConnection conn = null;
         InputStream is = null;
-        try {
-            String path = "http://" + WebIP.IP + "/FDStoryServer/getMyMarkerInfo";
-            path = path + "?userEmail=" + UserInfo.email;
-            conn = (HttpURLConnection) new URL(path).openConnection();
-            conn.setConnectTimeout(3000); // 设置超时时间
-            conn.setReadTimeout(3000);
-            conn.setDoInput(true);
-            conn.setRequestMethod("GET"); // 设置获取信息方式
-            conn.setRequestProperty("Charset", "UTF-8"); // 设置接收数据编码格式
-            if (conn.getResponseCode() == 200) {
-                is = conn.getInputStream();
-                String responseData = ParseInput.parseInfo(is);
-                //转换成json数据处理
-                JSONArray jsonArray = new JSONArray(responseData);
-                for (int i = 0; i < jsonArray.length(); i++) {       //一个循环代表一个对象
-                    JSONObject jsonObject = jsonArray.getJSONObject(i);
-                    int id = jsonObject.getInt("myMarkerID");
-                    double latitude = jsonObject.getDouble("myMarkerLatitude");
-                    double longitude = jsonObject.getDouble("myMarkerLongitude");
-                    String image = jsonObject.getString("myMarkerImage");
-                    String title = jsonObject.getString("myMarkerTitle");
-                    String date = jsonObject.getString("myMarkerDate");
-                    myMarkerInfos.add(new MarkerInfo(id, latitude, longitude, image, title, date));
 
+        @Override
+        protected Boolean doInBackground(Void... params) {
+            try {
+                String path = "http://" + WebIP.IP + "/FDStoryServer/getMyMarkerInfo";
+                path = path + "?userEmail=" + UserInfo.email;
+                conn = (HttpURLConnection) new URL(path).openConnection();
+                conn.setConnectTimeout(3000); // 设置超时时间
+                conn.setReadTimeout(3000);
+                conn.setDoInput(true);
+                conn.setRequestMethod("GET"); // 设置获取信息方式
+                conn.setRequestProperty("Charset", "UTF-8"); // 设置接收数据编码格式
+                if (conn.getResponseCode() == 200) {
+                    is = conn.getInputStream();
+                    String responseData = ParseInput.parseInfo(is);
+                    //转换成json数据处理
+                    JSONArray jsonArray = new JSONArray(responseData);
+                    for (int i = 0; i < jsonArray.length(); i++) {       //一个循环代表一个对象
+                        JSONObject jsonObject = jsonArray.getJSONObject(i);
+                        int id = jsonObject.getInt("myMarkerID");
+                        double latitude = jsonObject.getDouble("myMarkerLatitude");
+                        double longitude = jsonObject.getDouble("myMarkerLongitude");
+                        String image = jsonObject.getString("myMarkerImage");
+                        String title = jsonObject.getString("myMarkerTitle");
+                        String date = jsonObject.getString("myMarkerDate");
+                        myMarkerInfos.add(new MarkerInfo(id, latitude, longitude, image, title, date));
+
+                    }
+                    return true;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                // 意外退出时进行连接关闭保护
+                if (conn != null) {
+                    conn.disconnect();
                 }
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            // 意外退出时进行连接关闭保护
-            if (conn != null) {
-                conn.disconnect();
+            return false;
+        }
+
+        @Override
+        protected void onPostExecute(final Boolean success) {
+            task = null;
+            if (success) {
+                mRecord.setText("已在" + myMarkerInfos.size() + "个地方留下美食足迹");
+                addInfoOverLay(myMarkerInfos);
+                initMarkClick();
             }
         }
     }

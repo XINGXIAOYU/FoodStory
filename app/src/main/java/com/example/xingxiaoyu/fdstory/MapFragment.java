@@ -133,11 +133,10 @@ public class MapFragment extends Fragment implements SensorEventListener {
     }
 
     public class ReadInfoTask extends AsyncTask<Void, Void, Boolean> {
-        HttpURLConnection conn = null;
-        InputStream is = null;
-
         @Override
         protected Boolean doInBackground(Void... params) {
+            HttpURLConnection conn = null;
+            InputStream is = null;
             try {
                 String path = "http://" + WebIP.IP + "/FDStoryServer/getMarkerInfo";
                 conn = (HttpURLConnection) new URL(path).openConnection();

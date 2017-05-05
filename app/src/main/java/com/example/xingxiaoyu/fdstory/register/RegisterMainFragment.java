@@ -214,7 +214,7 @@ public class RegisterMainFragment extends Fragment {
             HttpURLConnection conn = null;
             InputStream is = null;
             try {
-                String path = "http://" + WebIP.IP + "/FDStoryServer/userRegister";
+                String path = "http://" + WebIP.IP + "/FDStoryServer/register";
                 path = path + "?userEmail=" + mEmail + "&userPassword=" + mPassword + "&userName=" + mName;
                 conn = (HttpURLConnection) new URL(path).openConnection();
                 conn.setConnectTimeout(3000); // 设置超时时间

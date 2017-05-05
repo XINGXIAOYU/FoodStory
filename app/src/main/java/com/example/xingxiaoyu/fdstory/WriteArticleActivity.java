@@ -5,6 +5,7 @@ import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.media.Image;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.FragmentManager;
@@ -27,7 +28,11 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.baidu.mapapi.model.LatLng;
+import com.example.xingxiaoyu.fdstory.entity.UserInfo;
 import com.example.xingxiaoyu.fdstory.util.ParseInput;
+import com.example.xingxiaoyu.fdstory.util.WebIP;
+import com.facebook.drawee.backends.pipeline.Fresco;
+import com.facebook.drawee.view.SimpleDraweeView;
 import com.yalantis.contextmenu.lib.ContextMenuDialogFragment;
 import com.yalantis.contextmenu.lib.MenuObject;
 import com.yalantis.contextmenu.lib.MenuParams;
@@ -38,6 +43,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
@@ -63,18 +69,21 @@ public class WriteArticleActivity extends AppCompatActivity implements OnMenuIte
     @Bind(R.id.article_content)
     TextView articleContent;
     @Bind(R.id.photo)
-    ImageView articleImage;
+    SimpleDraweeView articleImage;
     @Bind(R.id.insert_location)
     ImageView insertLocation;
+    @Bind(R.id.location)
+    TextView locationtext;
     String title;
     String content;
-    Drawable image;
+    String image;
     String location;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Fresco.initialize(this);
         setContentView(R.layout.activity_write_article);
         ButterKnife.bind(this);
         mToolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -137,11 +146,8 @@ public class WriteArticleActivity extends AppCompatActivity implements OnMenuIte
         close.setResource(R.drawable.icn_close);
         MenuObject comment = new MenuObject("发送");
         comment.setResource(R.drawable.icn_5);
-//        MenuObject like = new MenuObject("保存");
-//        like.setResource(R.drawable.icn_3);
         menuObjects.add(close);
         menuObjects.add(comment);
-//        menuObjects.add(like);
         return menuObjects;
     }
 
@@ -170,15 +176,8 @@ public class WriteArticleActivity extends AppCompatActivity implements OnMenuIte
             case 1:
                 title = articleTitle.getText().toString();
                 content = articleContent.getText().toString();
-//                image = articleImage.getDrawable();
                 latlngTask = new GetLatlngTask();
                 latlngTask.execute((Void) null);
-//                location =
-//                //发送
-//                /*
-//                saveArticle()
-//                 */
-                Toast.makeText(this, "成功发表，进入审核", Toast.LENGTH_SHORT).show();
                 finish();
                 break;
         }
@@ -261,7 +260,8 @@ public class WriteArticleActivity extends AppCompatActivity implements OnMenuIte
             //相册功能
 //            String url = "/Users/xingxiaoyu/Documents/FDStory/app/src/main/res/drawable/wel_pic.png";
 //            EventBus.getDefault().post(new PhotoEvent(url));
-            articleImage.setImageResource(R.drawable.wel_pic);
+            image = "http://farm8.staticflickr.com/7127/7675112872_e92b1dbe35.jpg";
+            articleImage.setImageURI(Uri.parse(image));
             //TODO
         }
     }
@@ -298,6 +298,7 @@ public class WriteArticleActivity extends AppCompatActivity implements OnMenuIte
                 public void onClick(View v) {
                     if (!TextUtils.isEmpty(tx1.getText())) {
                         location = tx1.getText().toString();
+                        locationtext.setText(location);
                         dismiss();
                     } else {
                         Toast.makeText(getApplicationContext(), "请输入位置", Toast.LENGTH_SHORT).show();
@@ -313,6 +314,8 @@ public class WriteArticleActivity extends AppCompatActivity implements OnMenuIte
 
         }
     }
+
+    //调用百度地图web service geocoding
 
     public class GetLatlngTask extends AsyncTask<Void, Void, Boolean> {
         HttpURLConnection conn = null;
@@ -334,12 +337,13 @@ public class WriteArticleActivity extends AppCompatActivity implements OnMenuIte
                     is = conn.getInputStream();
                     String responseData = ParseInput.parseInfo(is);
                     //转换成json数据处理
-                    JSONArray jsonArray = new JSONArray(responseData);
-                    for (int i = 0; i < jsonArray.length(); i++) {       //一个循环代表一个对象
-                        JSONObject jsonObject = jsonArray.getJSONObject(i);
-                        latLng = (LatLng) jsonObject.get("location");
-                        Log.i("LoginWeb", "NO2. " + latLng);
-                    }
+                    JSONObject jsonObject = new JSONObject(responseData);
+                    JSONObject jsonObject2 = jsonObject.getJSONObject("result");
+                    JSONObject jsonObject3 = jsonObject2.getJSONObject("location");
+                    double longitude = jsonObject3.getDouble("lng");
+                    double latitude = jsonObject3.getDouble("lat");
+                    latLng = new LatLng(latitude, longitude);
+                    return saveArticle();
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -349,7 +353,51 @@ public class WriteArticleActivity extends AppCompatActivity implements OnMenuIte
                     conn.disconnect();
                 }
             }
-            return null;
+            return false;
         }
+
+        @Override
+        protected void onPostExecute(final Boolean success) {
+            latlngTask = null;
+            if (success) {
+                Toast.makeText(getApplicationContext(), "成功发表，进入审核", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    public boolean saveArticle() {
+        HttpURLConnection conn = null;
+        try {
+            String path = "http://" + WebIP.IP + "/FDStoryServer/saveArticle";
+            conn = (HttpURLConnection) new URL(path).openConnection();
+            conn.setConnectTimeout(3000); // 设置超时时间
+            conn.setReadTimeout(3000);
+            conn.setDoInput(true);
+            conn.setRequestMethod("POST"); // 设置获取信息方式
+            String data = "articleAuthor" + UserInfo.email
+                    + "&articleTitle" + title
+                    + "&articleContent" + content
+                    + "&articleImage" + image
+                    + "ArticleLatitude" + latLng.latitude
+                    + "ArticleLongitude" + latLng.longitude;
+            conn.setRequestProperty("Charset", "UTF-8"); // 设置接收数据编码格式
+            conn.setRequestProperty("Content-Length", data.length() + "");
+            conn.setDoOutput(true);
+            OutputStream outputStream = conn.getOutputStream();
+            outputStream.write(data.getBytes());
+            outputStream.flush();
+            outputStream.close();
+            if (conn.getResponseCode() == 200) {
+                return true;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            // 意外退出时进行连接关闭保护
+            if (conn != null) {
+                conn.disconnect();
+            }
+        }
+        return false;
     }
 }

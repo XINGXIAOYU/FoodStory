@@ -144,24 +144,27 @@ public class ShareFragment extends Fragment {
 
         @Override
         protected void onPostExecute(final Boolean success) {
-            String[] urls = new String[shareInfoList.size()];
-            for (int i = 0; i < urls.length; i++) {
-                urls[i] = shareInfoList.get(i).getImage();
-            }
-            StaggeredAdapter adapter = new StaggeredAdapter(getActivity(), R.id.imageView1, urls);
-            gridView.setAdapter(adapter);
-            gridView.setOnItemClickListener(new StaggeredGridView.OnItemClickListener() {
-                @Override
-                public void onItemClick(StaggeredGridView parent, View view, int position, long id) {
-                    int post = position;//位置
-                    Toast.makeText(getActivity(), "点击了第" + post + "个", Toast.LENGTH_SHORT).show();
-                    //显示这片文章的详细内容
-                    Intent i = new Intent(getActivity(), ArticleActivity.class);
-                    i.putExtra("article_id", shareInfoList.get(post).getId());
-                    startActivity(i);
+            task = null;
+            if (success) {
+                String[] urls = new String[shareInfoList.size()];
+                for (int i = 0; i < urls.length; i++) {
+                    urls[i] = shareInfoList.get(i).getImage();
                 }
-            });
-            adapter.notifyDataSetChanged();//update
+                StaggeredAdapter adapter = new StaggeredAdapter(getActivity(), R.id.imageView1, urls);
+                gridView.setAdapter(adapter);
+                gridView.setOnItemClickListener(new StaggeredGridView.OnItemClickListener() {
+                    @Override
+                    public void onItemClick(StaggeredGridView parent, View view, int position, long id) {
+                        int post = position;//位置
+                        Toast.makeText(getActivity(), "点击了第" + post + "个", Toast.LENGTH_SHORT).show();
+                        //显示这片文章的详细内容
+                        Intent i = new Intent(getActivity(), ArticleActivity.class);
+                        i.putExtra("article_id", shareInfoList.get(post).getId());
+                        startActivity(i);
+                    }
+                });
+                adapter.notifyDataSetChanged();//update
+            }
         }
     }
 

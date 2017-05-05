@@ -183,7 +183,7 @@ public class LoginMainFragment extends Fragment {
             HttpURLConnection conn = null;
             InputStream is = null;
             try {
-                String path = "http://" + WebIP.IP + "/FDStoryServer/userLogin";
+                String path = "http://" + WebIP.IP + "/FDStoryServer/login";
                 path = path + "?userEmail=" + mEmail + "&userPassword=" + mPassword;
                 Log.i("LoginWeb", "NO1. " + mEmail + " " + mPassword);
                 conn = (HttpURLConnection) new URL(path).openConnection();
