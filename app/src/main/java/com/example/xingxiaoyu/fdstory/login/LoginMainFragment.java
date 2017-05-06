@@ -205,6 +205,7 @@ public class LoginMainFragment extends Fragment {
                             UserInfo.email = mEmail;
                             UserInfo.image = WebIP.PATH + jsonObject.getString("userImage");
                             UserInfo.name = jsonObject.getString("userName");
+                            UserInfo.userTime = jsonObject.getString("userTime");
                             return jsonObject.getBoolean("loginResult") == true;
                         }
                     }

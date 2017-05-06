@@ -119,6 +119,7 @@ public class MyselfFragment extends Fragment {
                 }
             }
         });
+        setTime.setText(UserInfo.userTime + ":00");
 
         return view;
     }
@@ -167,6 +168,8 @@ public class MyselfFragment extends Fragment {
 
     }
 
+
+
     private void initTime() {
         time.add("17:00");
         time.add("18:00");
@@ -180,9 +183,11 @@ public class MyselfFragment extends Fragment {
 
     public class SaveTimeTask extends AsyncTask<Void, Void, Boolean> {
         String time = null;
-        public SaveTimeTask(String time){
+
+        public SaveTimeTask(String time) {
             this.time = time;
         }
+
         @Override
         protected Boolean doInBackground(Void... params) {
             HttpURLConnection conn = null;
@@ -231,7 +236,7 @@ public class MyselfFragment extends Fragment {
             conn.setRequestMethod("GET"); // 设置获取信息方式
             conn.setRequestProperty("Charset", "UTF-8"); // 设置接收数据编码格式
             if (conn.getResponseCode() == 200) {
-               return;
+                return;
             }
         } catch (Exception e) {
             e.printStackTrace();

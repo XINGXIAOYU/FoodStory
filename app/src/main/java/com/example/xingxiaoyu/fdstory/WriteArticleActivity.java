@@ -74,10 +74,13 @@ public class WriteArticleActivity extends AppCompatActivity implements OnMenuIte
     ImageView insertLocation;
     @Bind(R.id.location)
     TextView locationtext;
+    @Bind(R.id.article_class)
+    TextView articleClass;
     String title;
     String content;
     String image;
     String location;
+    String article_class;
 
 
     @Override
@@ -176,6 +179,7 @@ public class WriteArticleActivity extends AppCompatActivity implements OnMenuIte
             case 1:
                 title = articleTitle.getText().toString();
                 content = articleContent.getText().toString();
+                article_class = articleClass.getText().toString();
                 latlngTask = new GetLatlngTask();
                 latlngTask.execute((Void) null);
                 finish();
@@ -376,10 +380,11 @@ public class WriteArticleActivity extends AppCompatActivity implements OnMenuIte
             conn.setRequestMethod("POST"); // 设置获取信息方式
             String data = "articleAuthor" + UserInfo.email
                     + "&articleTitle" + title
+                    + "&articleClass" + article_class
                     + "&articleContent" + content
                     + "&articleImage" + image
-                    + "ArticleLatitude" + latLng.latitude
-                    + "ArticleLongitude" + latLng.longitude;
+                    + "&ArticleLatitude" + latLng.latitude
+                    + "&ArticleLongitude" + latLng.longitude;
             conn.setRequestProperty("Charset", "UTF-8"); // 设置接收数据编码格式
             conn.setRequestProperty("Content-Length", data.length() + "");
             conn.setDoOutput(true);
