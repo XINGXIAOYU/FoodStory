@@ -128,7 +128,7 @@ public class MyFootPrintFragment extends Fragment {
                         int id = jsonObject.getInt("myMarkerID");
                         double latitude = jsonObject.getDouble("myMarkerLatitude");
                         double longitude = jsonObject.getDouble("myMarkerLongitude");
-                        String image = jsonObject.getString("myMarkerImage");
+                        String image = WebIP.PATH+jsonObject.getString("myMarkerImage");
                         String title = jsonObject.getString("myMarkerTitle");
                         String date = jsonObject.getString("myMarkerDate");
                         myMarkerInfos.add(new MarkerInfo(id, latitude, longitude, image, title, date));

@@ -201,7 +201,12 @@ public class LoginMainFragment extends Fragment {
                     JSONArray jsonArray = new JSONArray(responseData);
                     for (int i = 0; i < jsonArray.length(); i++) {       //一个循环代表一个对象
                         JSONObject jsonObject = jsonArray.getJSONObject(i);
-                        return jsonObject.getBoolean("loginResult") == true;
+                        if(jsonObject.getBoolean("loginResult") == true) {
+                            UserInfo.email = mEmail;
+                            UserInfo.image = WebIP.PATH + jsonObject.getString("userImage");
+                            UserInfo.name = jsonObject.getString("userName");
+                            return jsonObject.getBoolean("loginResult") == true;
+                        }
                     }
                 }
             } catch (Exception e) {
@@ -223,47 +228,11 @@ public class LoginMainFragment extends Fragment {
             showProgress(false);
             if (success) {
                 Intent intent = new Intent(loginActivity, MainActivity.class);
-                UserInfo.email = email;
-                initUser();
                 loginActivity.startActivity(intent);
                 loginActivity.finish();
             } else {
                 mPasswordView.setError(getString(R.string.error_incorrect_password));
                 mPasswordView.requestFocus();
-            }
-        }
-
-        //登陆成功后获得用户名称 邮箱 头像的信息
-        private void initUser(){
-            HttpURLConnection conn = null;
-            InputStream is = null;
-            try {
-                String path = "http://" + WebIP.IP + "/FDStoryServer/userInfo";
-                path = path + "?userEmail=" + mEmail;
-                conn = (HttpURLConnection) new URL(path).openConnection();
-                conn.setConnectTimeout(3000); // 设置超时时间
-                conn.setReadTimeout(3000);
-                conn.setDoInput(true);
-                conn.setRequestMethod("GET"); // 设置获取信息方式
-                conn.setRequestProperty("Charset", "UTF-8"); // 设置接收数据编码格式
-                if (conn.getResponseCode() == 200) {
-                    is = conn.getInputStream();
-                    String responseData = ParseInput.parseInfo(is);
-                    //转换成json数据处理
-                    JSONArray jsonArray = new JSONArray(responseData);
-                    for (int i = 0; i < jsonArray.length(); i++) {       //一个循环代表一个对象
-                        JSONObject jsonObject = jsonArray.getJSONObject(i);
-                        UserInfo.image = jsonObject.getString("userImage");
-                        UserInfo.name = jsonObject.getString("userName");
-                    }
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            } finally {
-                // 意外退出时进行连接关闭保护
-                if (conn != null) {
-                    conn.disconnect();
-                }
             }
         }
 

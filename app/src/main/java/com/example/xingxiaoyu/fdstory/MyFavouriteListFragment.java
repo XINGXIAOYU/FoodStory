@@ -154,7 +154,7 @@ public class MyFavouriteListFragment extends Fragment {
                         JSONObject jsonObject = jsonArray.getJSONObject(i);
                         int id = jsonObject.getInt("favouriteID");
                         String title = jsonObject.getString("favouriteTitle");
-                        String image = jsonObject.getString("favouriteImage");
+                        String image = WebIP.PATH+jsonObject.getString("favouriteImage");
                         String author = jsonObject.getString("favouriteAuthor");
                         mFavouriteList.add(new Favourite(id, title, image, author));
 

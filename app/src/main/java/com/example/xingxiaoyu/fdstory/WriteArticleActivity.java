@@ -325,7 +325,7 @@ public class WriteArticleActivity extends AppCompatActivity implements OnMenuIte
         protected Boolean doInBackground(Void... params) {
             try {
                 String path = "http://api.map.baidu.com/geocoder/v2/";
-                path = path + "?address=" + location + "&output=json&ak=9IocfDhkOuk5b6laSCUTHaLqKEeT7nef&mcode=5E:3B:2E:17:56:E1:00:95:54:F2:A2:A9:FE:9E:B1:74:36:85:3F:05;com.example.xingxiaoyu.fdstory";
+                path = path + "?address=" + location + "&output=json&ak=Eid9ruoBOqD1hrnqDYW1VjpTThwYjaaW&mcode=FF:C4:4F:41:08:2B:6D:AA:CC:F1:F9:9E:8B:BF:C2:1C:A9:74:53:84;com.example.xingxiaoyu.fdstory";
                 conn = (HttpURLConnection) new URL(path).openConnection();
                 conn.setConnectTimeout(3000); // 设置超时时间
                 conn.setReadTimeout(3000);

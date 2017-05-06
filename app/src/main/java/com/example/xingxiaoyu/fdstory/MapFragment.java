@@ -155,7 +155,7 @@ public class MapFragment extends Fragment implements SensorEventListener {
                         int id = jsonObject.getInt("markerID");
                         double latitude = jsonObject.getDouble("markerLatitude");
                         double longitude = jsonObject.getDouble("markerLongitude");
-                        String image = jsonObject.getString("markerImage");
+                        String image = WebIP.PATH+jsonObject.getString("markerImage");
                         String title = jsonObject.getString("markerTitle");
                         String date = jsonObject.getString("markerDate");
                         markerInfos.add(new MarkerInfo(id, latitude, longitude, image, title, date));

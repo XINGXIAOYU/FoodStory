@@ -37,7 +37,7 @@ public class ShareFragment extends Fragment {
     StaggeredGridView gridView;
     @Bind(R.id.write)
     FloatingActionButton write;
-    List<ShareInfo> shareInfoList = new ArrayList<>();
+    List<ShareInfo> shareInfoList;
     ReadInfoTask task;
 
 //    private String urls[] = {
@@ -75,7 +75,7 @@ public class ShareFragment extends Fragment {
     }
 
     public ShareFragment() {
-
+        shareInfoList = new ArrayList<>();
     }
 
     @Override
@@ -111,6 +111,7 @@ public class ShareFragment extends Fragment {
         @Override
         protected Boolean doInBackground(Void... params) {
             try {
+                shareInfoList.clear();
                 String path = "http://" + WebIP.IP + "/FDStoryServer/getShareListInfo";
                 conn = (HttpURLConnection) new URL(path).openConnection();
                 conn.setConnectTimeout(3000); // 设置超时时间
@@ -125,7 +126,7 @@ public class ShareFragment extends Fragment {
                     for (int i = 0; i < jsonArray.length(); i++) {       //一个循环代表一个对象
                         JSONObject jsonObject = jsonArray.getJSONObject(i);
                         int id = jsonObject.getInt("shareID");
-                        String image = jsonObject.getString("shareImage");
+                        String image = WebIP.PATH+jsonObject.getString("shareImage");
                         shareInfoList.add(new ShareInfo(id, image));
 
                     }

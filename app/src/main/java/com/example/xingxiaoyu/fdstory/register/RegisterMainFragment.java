@@ -23,6 +23,7 @@ import android.widget.Toast;
 
 import com.example.xingxiaoyu.fdstory.MainActivity;
 import com.example.xingxiaoyu.fdstory.R;
+import com.example.xingxiaoyu.fdstory.entity.UserInfo;
 import com.example.xingxiaoyu.fdstory.util.ParseInput;
 import com.example.xingxiaoyu.fdstory.util.WebIP;
 
@@ -229,7 +230,12 @@ public class RegisterMainFragment extends Fragment {
                     JSONArray jsonArray = new JSONArray(responseData);
                     for (int i = 0; i < jsonArray.length(); i++) {       //一个循环代表一个对象
                         JSONObject jsonObject = jsonArray.getJSONObject(i);
-                        return jsonObject.getBoolean("registerResult") == true;
+                        if(jsonObject.getBoolean("registerResult") == true) {
+                            UserInfo.email = mEmail;
+                            UserInfo.image = WebIP.PATH + jsonObject.getString("userImage");
+                            UserInfo.name = jsonObject.getString("userName");
+                            return jsonObject.getBoolean("registerResult") == true;
+                        }
                     }
                 }
             } catch (Exception e) {
@@ -250,14 +256,14 @@ public class RegisterMainFragment extends Fragment {
             showProgress(false);
             if (success) {
                 Intent intent = new Intent(registerActivity, MainActivity.class);
-                intent.putExtra("user_name", name);
-                intent.putExtra("email", email);
                 registerActivity.startActivity(intent);
                 registerActivity.finish();
             } else {
                 Toast.makeText(registerActivity, "该邮箱已被注册", Toast.LENGTH_SHORT).show();
             }
         }
+
+
 
         @Override
         protected void onCancelled() {

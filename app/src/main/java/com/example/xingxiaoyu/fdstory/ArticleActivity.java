@@ -201,7 +201,7 @@ public class ArticleActivity extends AppCompatActivity implements OnMenuItemClic
         protected Boolean doInBackground(Void... params) {
             try {
                 String path = "http://" + WebIP.IP + "/FDStoryServer/getArticleInfo";
-                path = path + "?articleID=" + getIntent().getStringExtra("article_id");
+                path = path + "?articleID=" + getIntent().getIntExtra("article_id",-1);
                 conn = (HttpURLConnection) new URL(path).openConnection();
                 conn.setConnectTimeout(3000); // 设置超时时间
                 conn.setReadTimeout(3000);
@@ -216,7 +216,7 @@ public class ArticleActivity extends AppCompatActivity implements OnMenuItemClic
                     for (int i = 0; i < jsonArray.length(); i++) {       //一个循环代表一个对象
                         JSONObject jsonObject = jsonArray.getJSONObject(i);
                         article_id = jsonObject.getInt("articleID");
-                        String image = jsonObject.getString("articleImage");
+                        String image = WebIP.PATH+jsonObject.getString("articleImage");
                         String title = jsonObject.getString("articleTitle");
                         String author = jsonObject.getString("articleAuthor");
                         String date = jsonObject.getString("articleDate");
@@ -262,7 +262,7 @@ public class ArticleActivity extends AppCompatActivity implements OnMenuItemClic
             InputStream is = null;
             try {
                 String path = "http://" + WebIP.IP + "/FDStoryServer/addLike";
-                path = path + "?articleID=" + getIntent().getStringExtra("article_id") + "&likeNum" + likeNum;
+                path = path + "?articleID=" +  getIntent().getIntExtra("article_id",-1)+ "&userEmail=" + UserInfo.email;
                 conn = (HttpURLConnection) new URL(path).openConnection();
                 conn.setConnectTimeout(3000); // 设置超时时间
                 conn.setReadTimeout(3000);
@@ -305,7 +305,7 @@ public class ArticleActivity extends AppCompatActivity implements OnMenuItemClic
             InputStream is = null;
             try {
                 String path = "http://" + WebIP.IP + "/FDStoryServer/addSave";
-                path = path + "?articleID=" + getIntent().getStringExtra("article_id") + "?userEmail" + UserInfo.email;
+                path = path + "?articleID=" + getIntent().getIntExtra("article_id",-1) + "&userEmail=" + UserInfo.email;
                 conn = (HttpURLConnection) new URL(path).openConnection();
                 conn.setConnectTimeout(3000); // 设置超时时间
                 conn.setReadTimeout(3000);

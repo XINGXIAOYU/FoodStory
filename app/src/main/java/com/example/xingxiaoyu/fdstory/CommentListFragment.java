@@ -148,7 +148,7 @@ public class CommentListFragment extends Fragment {
                         JSONObject jsonObject = jsonArray.getJSONObject(i);
                         int id = jsonObject.getInt("commentID");
                         String commenter = jsonObject.getString("commenter");
-                        String image = jsonObject.getString("commenterImage");
+                        String image = WebIP.PATH+jsonObject.getString("commenterImage");
                         String content = jsonObject.getString("commentContent");
                         String date = jsonObject.getString("commentDate");
                         mCommentList.add(new Comment(id, commenter, image, content, date));

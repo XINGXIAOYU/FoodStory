@@ -43,7 +43,7 @@
         android:theme="@style/AppTheme">
         <meta-data
             android:name="com.baidu.lbsapi.API_KEY"
-            android:value="9IocfDhkOuk5b6laSCUTHaLqKEeT7nef" />
+            android:value="Eid9ruoBOqD1hrnqDYW1VjpTThwYjaaW" />
 
         <activity android:name=".MainActivity"></activity>
         <activity android:name=".ArticleActivity"></activity>
@@ -51,14 +51,14 @@
         <activity android:name=".login.LoginActivity"></activity>
         <activity android:name=".register.RegisterActivity"></activity>
         <activity android:name=".WelcomeActivity">
-
-        </activity>
-        <activity android:name=".WriteArticleActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+        </activity>
+        <activity android:name=".WriteArticleActivity">
+
         </activity>
         <activity android:name=".MyFootPrintActivity"></activity>
         <activity android:name=".MyNewsActivity"></activity>

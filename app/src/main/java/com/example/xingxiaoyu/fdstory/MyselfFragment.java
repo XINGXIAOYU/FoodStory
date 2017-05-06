@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.Gravity;
@@ -20,9 +21,14 @@ import android.widget.TextView;
 
 import com.bigkoo.pickerview.OptionsPickerView;
 import com.bigkoo.pickerview.listener.CustomListener;
+import com.example.xingxiaoyu.fdstory.entity.MarkerInfo;
 import com.example.xingxiaoyu.fdstory.entity.UserInfo;
+import com.example.xingxiaoyu.fdstory.util.ParseInput;
 import com.example.xingxiaoyu.fdstory.util.WebIP;
 import com.facebook.drawee.view.SimpleDraweeView;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.io.InputStream;
 import java.net.HttpURLConnection;
@@ -39,6 +45,7 @@ import butterknife.ButterKnife;
 public class MyselfFragment extends Fragment {
     private OptionsPickerView pvCustomOptions;
     private ArrayList<String> time = new ArrayList<>();
+    private SaveTimeTask saveTimeTask;
     @Bind(R.id.my_image)
     SimpleDraweeView myImage;
     @Bind(R.id.my_footprint)
@@ -129,8 +136,8 @@ public class MyselfFragment extends Fragment {
             public void onOptionsSelect(int options1, int option2, int options3, View v) {
                 //返回的分别是三个级别的选中位置
                 String tx = time.get(options1);
-                setTime.setText(tx);
-                saveTime();
+                saveTimeTask = new SaveTimeTask(tx);
+                saveTimeTask.execute((Void) null);
             }
         })
                 .setLayoutRes(R.layout.pickerview_custom_options, new CustomListener() {
@@ -169,6 +176,46 @@ public class MyselfFragment extends Fragment {
         time.add("22:00");
         time.add("23:00");
         time.add("00:00");
+    }
+
+    public class SaveTimeTask extends AsyncTask<Void, Void, Boolean> {
+        String time = null;
+        public SaveTimeTask(String time){
+            this.time = time;
+        }
+        @Override
+        protected Boolean doInBackground(Void... params) {
+            HttpURLConnection conn = null;
+            try {
+                String path = "http://" + WebIP.IP + "/FDStoryServer/saveChangeTime";
+                path = path + "?userEmail=" + UserInfo.email + "&time=" + time;
+                conn = (HttpURLConnection) new URL(path).openConnection();
+                conn.setConnectTimeout(3000); // 设置超时时间
+                conn.setReadTimeout(3000);
+                conn.setDoInput(true);
+                conn.setRequestMethod("GET"); // 设置获取信息方式
+                conn.setRequestProperty("Charset", "UTF-8"); // 设置接收数据编码格式
+                if (conn.getResponseCode() == 200) {
+                    return true;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                // 意外退出时进行连接关闭保护
+                if (conn != null) {
+                    conn.disconnect();
+                }
+            }
+            return false;
+        }
+
+        @Override
+        protected void onPostExecute(final Boolean success) {
+            saveTimeTask = null;
+            if (success) {
+                setTime.setText(time);
+            }
+        }
     }
 
     private void saveTime() {
