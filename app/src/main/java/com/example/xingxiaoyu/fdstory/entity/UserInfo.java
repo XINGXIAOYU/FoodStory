@@ -9,4 +9,5 @@ public class UserInfo {
     public static String password;
     public static String image;
     public static String name;
+    public static String userTime;
 }

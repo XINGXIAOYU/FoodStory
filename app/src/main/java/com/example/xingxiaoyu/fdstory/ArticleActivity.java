@@ -183,13 +183,11 @@ public class ArticleActivity extends AppCompatActivity implements OnMenuItemClic
                 saveSaveTask.execute((Void) null);
                 break;
         }
-        Toast.makeText(this, "Clicked on position: " + position, Toast.LENGTH_SHORT).show();
     }
 
 
     @Override
     public void onMenuItemLongClick(View clickedView, int position) {
-        Toast.makeText(this, "Long clicked on position: " + position, Toast.LENGTH_SHORT).show();
     }
 
     //根据文章的ID获取相关信息
@@ -270,7 +268,19 @@ public class ArticleActivity extends AppCompatActivity implements OnMenuItemClic
                 conn.setRequestMethod("GET"); // 设置获取信息方式
                 conn.setRequestProperty("Charset", "UTF-8"); // 设置接收数据编码格式
                 if (conn.getResponseCode() == 200) {
-                    EventBus.getDefault().post(new MyEvent(likeNum, 1));
+                    is = conn.getInputStream();
+                    String responseData = ParseInput.parseInfo(is);
+                    //转换成json数据处理
+                    JSONArray jsonArray = new JSONArray(responseData);
+                    for (int i = 0; i < jsonArray.length(); i++) {       //一个循环代表一个对象
+                        JSONObject jsonObject = jsonArray.getJSONObject(i);
+                        boolean result = jsonObject.getBoolean("result");
+                        if(result ==true){
+                            EventBus.getDefault().post(new MyEvent(likeNum, 1));
+                        }else{
+                            Toast.makeText(getApplicationContext(), "已经赞过啦~", Toast.LENGTH_SHORT).show();
+                        }
+                    }
                     return true;
                 }
             } catch (Exception e) {
@@ -313,7 +323,19 @@ public class ArticleActivity extends AppCompatActivity implements OnMenuItemClic
                 conn.setRequestMethod("GET"); // 设置获取信息方式
                 conn.setRequestProperty("Charset", "UTF-8"); // 设置接收数据编码格式
                 if (conn.getResponseCode() == 200) {
-                    EventBus.getDefault().post(new MyEvent(saveNum, 2));
+                    is = conn.getInputStream();
+                    String responseData = ParseInput.parseInfo(is);
+                    //转换成json数据处理
+                    JSONArray jsonArray = new JSONArray(responseData);
+                    for (int i = 0; i < jsonArray.length(); i++) {       //一个循环代表一个对象
+                        JSONObject jsonObject = jsonArray.getJSONObject(i);
+                        boolean result = jsonObject.getBoolean("result");
+                        if(result ==true){
+                            EventBus.getDefault().post(new MyEvent(saveNum, 2));
+                        }else{
+                            Toast.makeText(getApplicationContext(), "已经收藏过啦~", Toast.LENGTH_SHORT).show();
+                        }
+                    }
                     return true;
                 }
             } catch (Exception e) {

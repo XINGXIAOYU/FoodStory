@@ -1,22 +1,48 @@
 package com.example.xingxiaoyu.fdstory;
 
+import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.view.View;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.ashokvarma.bottomnavigation.BottomNavigationBar;
 import com.ashokvarma.bottomnavigation.BottomNavigationItem;
 import com.baidu.mapapi.SDKInitializer;
+import com.example.xingxiaoyu.fdstory.entity.UserInfo;
+import com.example.xingxiaoyu.fdstory.util.ParseInput;
+import com.example.xingxiaoyu.fdstory.util.WebIP;
 import com.facebook.drawee.backends.pipeline.Fresco;
+import com.yalantis.contextmenu.lib.ContextMenuDialogFragment;
+import com.yalantis.contextmenu.lib.MenuObject;
+import com.yalantis.contextmenu.lib.MenuParams;
+
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.yalantis.contextmenu.lib.interfaces.OnMenuItemClickListener;
+import com.yalantis.contextmenu.lib.interfaces.OnMenuItemLongClickListener;
+
+import org.greenrobot.eventbus.EventBus;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 /**
  * Created by xingxiaoyu on 17/4/26.
  */
 
-public class MainActivity extends AppCompatActivity implements BottomNavigationBar.OnTabSelectedListener {
+public class MainActivity extends AppCompatActivity implements BottomNavigationBar.OnTabSelectedListener, OnMenuItemClickListener, OnMenuItemLongClickListener {
     Toolbar mToolbar;
     TextView mToolBarTextView;
     BottomNavigationBar bottomNavigationBar;
@@ -27,6 +53,19 @@ public class MainActivity extends AppCompatActivity implements BottomNavigationB
     int lastSelectedPosition = 0;
     private String TAG = MainActivity.class.getSimpleName();
     android.support.v4.app.FragmentManager fm;
+    private NightTask nightTask;
+    private SaveLikeTask saveLikeTask;
+    private SaveSaveTask saveSaveTask;
+    private int article_id;
+    private boolean isNight;
+    private String image;
+    private String title;
+    private String author;
+    private String date;
+    private String content;
+    private int like;
+    private int save;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,7 +86,6 @@ public class MainActivity extends AppCompatActivity implements BottomNavigationB
 
         bottomNavigationBar.setTabSelectedListener(this);
         setDefaultFragment();
-//        String name = getIntent().getStringExtra("email");
     }
 
     /**
@@ -55,18 +93,11 @@ public class MainActivity extends AppCompatActivity implements BottomNavigationB
      */
     private void setDefaultFragment() {
         fm = getSupportFragmentManager();
-        if (isDay()) {
-            mMapFragment = MapFragment.newInstance();
-            addFragment(mMapFragment,true,R.id.tb);
-        } else {
-//            nightPageFragment = ArticleFragment.newInstance("文章名字", "http://farm8.staticflickr.com/7232/6913504132_a0fce67a0e_c.jpg");
-//            addFragment(nightPageFragment,true,R.id.tb);
-        }
+        nightTask = new NightTask();
+        nightTask.execute((Void) null);
         mShareFragment = ShareFragment.newInstance();
         mMySelfFragment = MyselfFragment.newInstance();
         mToolBarTextView.setText("首页");
-
-//        transaction.commit();
     }
 
     protected void addFragment(Fragment fragment, boolean addToBackStack, int containerId) {
@@ -83,11 +114,6 @@ public class MainActivity extends AppCompatActivity implements BottomNavigationB
         }
     }
 
-    //当前时间是否比设定时间小
-    private boolean isDay() {
-        //TODO
-        return true;
-    }
 
     private void initToolbar() {
         mToolBarTextView = (TextView) findViewById(R.id.text_view_toolbar_title);
@@ -106,20 +132,19 @@ public class MainActivity extends AppCompatActivity implements BottomNavigationB
         android.support.v4.app.FragmentTransaction transaction = fm.beginTransaction();
         switch (position) {
             case 0:
-                if (isDay()&&mMapFragment == null) {
+                if (!isNight && mMapFragment == null) {
                     mMapFragment = mMapFragment.newInstance();
                     transaction.replace(R.id.tb, mMapFragment);
-                } else if(isDay()) {
+                } else if (!isNight) {
                     transaction.show(mMapFragment);
                     transaction.replace(R.id.tb, mMapFragment);
+                } else if (isNight && nightPageFragment == null) {
+                    nightPageFragment = nightPageFragment.newInstance(article_id, image, title, author, date, content, like, save);
+                    transaction.replace(R.id.tb, nightPageFragment);
+                } else if (isNight) {
+                    transaction.show(nightPageFragment);
+                    transaction.replace(R.id.tb, nightPageFragment);
                 }
-//                }else if(!isDay()&&nightPageFragment == null){
-//                    nightPageFragment = ArticleFragment.newInstance("文章名字", "http://farm8.staticflickr.com/7232/6913504132_a0fce67a0e_c.jpg");
-//                    transaction.replace(R.id.tb, nightPageFragment);
-//                }else if(!isDay()){
-//                    transaction.show(nightPageFragment);
-//                    transaction.replace(R.id.tb, nightPageFragment);
-//                }
                 mToolBarTextView.setText("首页");
                 break;
             case 1:
@@ -156,5 +181,263 @@ public class MainActivity extends AppCompatActivity implements BottomNavigationB
     @Override
     public void onTabReselected(int position) {
 
+    }
+
+    private ContextMenuDialogFragment mMenuDialogFragment;
+
+    private void initMenuFragment() {
+        MenuParams menuParams = new MenuParams();
+        menuParams.setActionBarSize((int) getResources().getDimension(R.dimen.tool_bar_height));
+        menuParams.setMenuObjects(getMenuObjects());
+        menuParams.setClosableOutside(false);
+        mMenuDialogFragment = ContextMenuDialogFragment.newInstance(menuParams);
+        mMenuDialogFragment.setItemClickListener(this);
+        mMenuDialogFragment.setItemLongClickListener(this);
+    }
+
+    private List<MenuObject> getMenuObjects() {
+
+        List<MenuObject> menuObjects = new ArrayList<>();
+        MenuObject close = new MenuObject();
+        close.setResource(R.drawable.icn_close);
+        MenuObject comment = new MenuObject("评论");
+        comment.setResource(R.drawable.icn_1);
+        MenuObject like = new MenuObject("点赞");
+        like.setResource(R.drawable.icn_2);
+        MenuObject addFav = new MenuObject("收藏");
+        addFav.setResource(R.drawable.icn_4);
+        menuObjects.add(close);
+        menuObjects.add(comment);
+        menuObjects.add(like);
+        menuObjects.add(addFav);
+        return menuObjects;
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(final Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.context_menu:
+                if (fm.findFragmentByTag(ContextMenuDialogFragment.TAG) == null) {
+                    mMenuDialogFragment.show(fm, ContextMenuDialogFragment.TAG);
+                }
+                break;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onMenuItemClick(View clickedView, int position) {
+        switch (position) {
+            case 1:
+                //评论
+                Intent i = new Intent(this, CommentActivity.class);
+                i.putExtra("article_id", article_id);
+                startActivity(i);
+                break;
+            case 2:
+                //点赞
+                int num = nightPageFragment.getArguments().getInt("article_like");//从数据库获得点赞数
+                num++;
+                saveLikeTask = new SaveLikeTask(num);
+                saveLikeTask.execute((Void) null);
+                break;
+            case 3:
+                //收藏
+                int num2 = nightPageFragment.getArguments().getInt("article_save");//从数据库获得点赞数
+                num2++;
+                saveSaveTask = new SaveSaveTask((num2));
+                saveSaveTask.execute((Void) null);
+                break;
+        }
+    }
+
+    @Override
+    public void onMenuItemLongClick(View clickedView, int position) {
+
+    }
+
+    //判断是否夜间模式
+    public class NightTask extends AsyncTask<Void, Void, Boolean> {
+        @Override
+        protected Boolean doInBackground(Void... params) {
+            HttpURLConnection conn = null;
+            InputStream is = null;
+            try {
+                String path = "http://" + WebIP.IP + "/FDStoryServer/night";
+                path = path + "?userEmail=" + UserInfo.email;
+                conn = (HttpURLConnection) new URL(path).openConnection();
+                conn.setConnectTimeout(3000); // 设置超时时间
+                conn.setReadTimeout(3000);
+                conn.setDoInput(true);
+                conn.setRequestMethod("GET"); // 设置获取信息方式
+                conn.setRequestProperty("Charset", "UTF-8"); // 设置接收数据编码格式
+                if (conn.getResponseCode() == 200) {
+                    is = conn.getInputStream();
+                    String responseData = ParseInput.parseInfo(is);
+                    //转换成json数据处理
+                    JSONArray jsonArray = new JSONArray(responseData);
+                    for (int i = 0; i < jsonArray.length(); i++) {       //一个循环代表一个对象
+                        JSONObject jsonObject = jsonArray.getJSONObject(i);
+                        if (jsonObject.getBoolean("isNight")) {
+                            isNight = true;
+                            article_id = jsonObject.getInt("articleID");
+                            image = WebIP.PATH + jsonObject.getString("articleImage");
+                            title = jsonObject.getString("articleTitle");
+                            author = jsonObject.getString("articleAuthor");
+                            date = jsonObject.getString("articleDate");
+                            content = jsonObject.getString("articleContent");
+                            like = jsonObject.getInt("likeNumber");
+                            save = jsonObject.getInt("saveNumber");
+                            nightPageFragment = nightPageFragment.newInstance(article_id, image, title, author, date, content, like, save);
+                            return true;
+                        } else {
+                            isNight = false;
+                        }
+                        return true;
+                    }
+
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                // 意外退出时进行连接关闭保护
+                if (conn != null) {
+                    conn.disconnect();
+                }
+            }
+            return false;
+        }
+
+        @Override
+        protected void onPostExecute(final Boolean success) {
+            nightTask = null;
+            if (success) {
+                if (isNight == true) {
+                    initMenuFragment();
+                    addFragment(nightPageFragment, true, R.id.tb);
+                } else {
+                    mMapFragment = MapFragment.newInstance();
+                    addFragment(mMapFragment, true, R.id.tb);
+                }
+            }
+        }
+    }
+
+    //保存点赞数
+    public class SaveLikeTask extends AsyncTask<Void, Void, Boolean> {
+        int likeNum;
+
+        public SaveLikeTask(int likeNum) {
+            this.likeNum = likeNum;
+        }
+
+        @Override
+        protected Boolean doInBackground(Void... params) {
+            HttpURLConnection conn = null;
+            InputStream is = null;
+
+
+            try {
+                String path = "http://" + WebIP.IP + "/FDStoryServer/addLike";
+                path = path + "?articleID=" + article_id + "&userEmail=" + UserInfo.email;
+                conn = (HttpURLConnection) new URL(path).openConnection();
+                conn.setConnectTimeout(3000); // 设置超时时间
+                conn.setReadTimeout(3000);
+                conn.setDoInput(true);
+                conn.setRequestMethod("GET"); // 设置获取信息方式
+                conn.setRequestProperty("Charset", "UTF-8"); // 设置接收数据编码格式
+                if (conn.getResponseCode() == 200) {
+                    is = conn.getInputStream();
+                    String responseData = ParseInput.parseInfo(is);
+                    //转换成json数据处理
+                    JSONArray jsonArray = new JSONArray(responseData);
+                    for (int i = 0; i < jsonArray.length(); i++) {       //一个循环代表一个对象
+                        JSONObject jsonObject = jsonArray.getJSONObject(i);
+                        boolean result = jsonObject.getBoolean("result");
+                        if(result ==true){
+                            EventBus.getDefault().post(new MyEvent(likeNum, 1));
+                        }else{
+                            Toast.makeText(getApplicationContext(), "已经赞过啦~", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                    return true;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                // 意外退出时进行连接关闭保护
+                if (conn != null) {
+                    conn.disconnect();
+                }
+            }
+            return false;
+        }
+
+        @Override
+        protected void onPostExecute(final Boolean success) {
+            saveLikeTask = null;
+        }
+
+    }
+
+    //保存收藏数
+    public class SaveSaveTask extends AsyncTask<Void, Void, Boolean> {
+        int saveNum;
+
+        public SaveSaveTask(int saveNum) {
+            this.saveNum = saveNum;
+        }
+
+        @Override
+        protected Boolean doInBackground(Void... params) {
+            HttpURLConnection conn = null;
+            InputStream is = null;
+            try {
+                String path = "http://" + WebIP.IP + "/FDStoryServer/addSave";
+                path = path + "?articleID=" + article_id + "&userEmail=" + UserInfo.email;
+                conn = (HttpURLConnection) new URL(path).openConnection();
+                conn.setConnectTimeout(3000); // 设置超时时间
+                conn.setReadTimeout(3000);
+                conn.setDoInput(true);
+                conn.setRequestMethod("GET"); // 设置获取信息方式
+                conn.setRequestProperty("Charset", "UTF-8"); // 设置接收数据编码格式
+                if (conn.getResponseCode() == 200) {
+                    is = conn.getInputStream();
+                    String responseData = ParseInput.parseInfo(is);
+                    //转换成json数据处理
+                    JSONArray jsonArray = new JSONArray(responseData);
+                    for (int i = 0; i < jsonArray.length(); i++) {       //一个循环代表一个对象
+                        JSONObject jsonObject = jsonArray.getJSONObject(i);
+                        boolean result = jsonObject.getBoolean("result");
+                        if(result ==true){
+                            EventBus.getDefault().post(new MyEvent(saveNum, 2));
+                        }else{
+                            Toast.makeText(getApplicationContext(), "已经收藏过啦~", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                    return true;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                // 意外退出时进行连接关闭保护
+                if (conn != null) {
+                    conn.disconnect();
+                }
+            }
+            return false;
+        }
+
+        @Override
+        protected void onPostExecute(final Boolean success) {
+            saveSaveTask = null;
+        }
     }
 }
