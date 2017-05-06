@@ -49,7 +49,7 @@ public class MainActivity extends AppCompatActivity implements BottomNavigationB
     private MapFragment mMapFragment;
     private ShareFragment mShareFragment;
     private MyselfFragment mMySelfFragment;
-    private ArticleFragment nightPageFragment;
+    private NightPageFragment nightPageFragment;
     int lastSelectedPosition = 0;
     private String TAG = MainActivity.class.getSimpleName();
     android.support.v4.app.FragmentManager fm;

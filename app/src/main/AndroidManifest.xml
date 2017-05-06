@@ -60,6 +60,7 @@
         <activity android:name=".WriteArticleActivity">
 
         </activity>
+        <activity android:name=".MenuActivity"></activity>
         <activity android:name=".MyFootPrintActivity"></activity>
         <activity android:name=".MyNewsActivity"></activity>
         <activity android:name=".MyFavouriteActivity"></activity>
