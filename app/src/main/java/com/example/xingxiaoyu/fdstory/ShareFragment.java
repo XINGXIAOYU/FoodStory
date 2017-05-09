@@ -157,7 +157,7 @@ public class ShareFragment extends Fragment {
                     @Override
                     public void onItemClick(StaggeredGridView parent, View view, int position, long id) {
                         int post = position;//位置
-                        Toast.makeText(getActivity(), "点击了第" + post + "个", Toast.LENGTH_SHORT).show();
+//                        Toast.makeText(getActivity(), "点击了第" + post + "个", Toast.LENGTH_SHORT).show();
                         //显示这片文章的详细内容
                         Intent i = new Intent(getActivity(), ArticleActivity.class);
                         i.putExtra("article_id", shareInfoList.get(post).getId());

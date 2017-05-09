@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.app.Fragment;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -116,6 +117,7 @@ public class CommentListFragment extends Fragment {
                 if (!TextUtils.isEmpty(message.getText())) {
                     info = message.getText().toString();
                     saveCommentTask = new SaveCommentTask(info);
+                    saveCommentTask.execute((Void)null);
                 } else {
                     Toast.makeText(getActivity(), "请输入内容", Toast.LENGTH_SHORT).show();
                 }
@@ -148,9 +150,10 @@ public class CommentListFragment extends Fragment {
                         JSONObject jsonObject = jsonArray.getJSONObject(i);
                         int id = jsonObject.getInt("commentID");
                         String commenter = jsonObject.getString("commenter");
-                        String image = WebIP.PATH+jsonObject.getString("commenterImage");
+                        String image = WebIP.PATH + jsonObject.getString("commenterImage");
                         String content = jsonObject.getString("commentContent");
                         String date = jsonObject.getString("commentDate");
+                        Log.i("Date",date);
                         mCommentList.add(new Comment(id, commenter, image, content, date));
 
                     }
@@ -179,7 +182,8 @@ public class CommentListFragment extends Fragment {
     //保存评论
     public class SaveCommentTask extends AsyncTask<Void, Void, Boolean> {
         String info;
-
+        int commentID;
+        String date;
         public SaveCommentTask(String info) {
             this.info = info;
         }
@@ -190,21 +194,16 @@ public class CommentListFragment extends Fragment {
             InputStream is = null;
             try {
                 String path = "http://" + WebIP.IP + "/FDStoryServer/saveComment";
+                path = path +"?commenter=" + UserInfo.email
+                        + "&content=" + info
+                        + "&articleId=" + getArguments().getInt("article_id");
                 conn = (HttpURLConnection) new URL(path).openConnection();
                 conn.setConnectTimeout(3000); // 设置超时时间
                 conn.setReadTimeout(3000);
                 conn.setDoInput(true);
-                conn.setRequestMethod("POST"); // 设置获取信息方式
-                String data = "commenter" + UserInfo.email
-                        + "&content" + info
-                        + "&articleID" + getArguments().getInt("article_id");
+                conn.setRequestMethod("GET"); // 设置获取信息方式
                 conn.setRequestProperty("Charset", "UTF-8"); // 设置接收数据编码格式
-                conn.setRequestProperty("Content-Length", data.length() + "");
-                conn.setDoOutput(true);
-                OutputStream outputStream = conn.getOutputStream();
-                outputStream.write(data.getBytes());
-                outputStream.flush();
-                outputStream.close();
+                Log.i("LoginWeb", "ResponseCoode" + conn.getResponseCode());
                 if (conn.getResponseCode() == 200) {
                     is = conn.getInputStream();
                     String responseData = ParseInput.parseInfo(is);
@@ -212,14 +211,11 @@ public class CommentListFragment extends Fragment {
                     JSONArray jsonArray = new JSONArray(responseData);
                     for (int i = 0; i < jsonArray.length(); i++) {       //一个循环代表一个对象
                         JSONObject jsonObject = jsonArray.getJSONObject(i);
-                        int id = jsonObject.getInt("commentID");
-                        String commenter = jsonObject.getString("commenter");
-                        String image = jsonObject.getString("commenterImage");
-                        String content = jsonObject.getString("commentContent");
-                        String date = jsonObject.getString("commentDate");
-                        mCommentList.add(0, new Comment(id, commenter, image, content, date));
+                        if(jsonObject.getBoolean("result"))//返回给我ID和Date
+                            commentID = jsonObject.getInt("commentId");
+                            date = jsonObject.getString("time");
+                            return true;
                     }
-                    return true;
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -237,6 +233,7 @@ public class CommentListFragment extends Fragment {
         protected void onPostExecute(final Boolean success) {
             saveCommentTask = null;
             if (success) {
+                mCommentList.add(0,new Comment(commentID,UserInfo.name,UserInfo.image,info,date));
                 mBaseAdapter.notifyDataSetChanged();
                 comment(false);
             }

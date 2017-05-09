@@ -92,7 +92,7 @@ public class MenuFragment extends Fragment {
                     JSONArray jsonArray = new JSONArray(responseData);
                     for (int i = 0; i < jsonArray.length(); i++) {       //一个循环代表一个对象
                         JSONObject jsonObject = jsonArray.getJSONObject(i);
-                        String image = WebIP.PATH + jsonObject.getString("menuItemImage");
+                        String image = jsonObject.getString("menuItemImage");
                         String text = jsonObject.getString("menuItemText");
                         menuItemList.add(new MenuItemInfo(image, text));
 
